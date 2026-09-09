@@ -10,6 +10,17 @@
 <body>
   <main id="app" class="app" aria-live="polite">
     <div class="stage-shell">
+      <audio id="bgMusic" src="Cozy Shelter Days.mp3" loop preload="auto"></audio>
+
+      <button
+        id="musicToggle"
+        class="music-toggle"
+        type="button"
+        hidden
+        aria-label="Silenciar música"
+        title="Silenciar música"
+      >🔊</button>
+
       <section
         id="stage"
         class="stage"
@@ -21,6 +32,15 @@
         <div id="startPrompt" class="start-prompt">Toca para iniciar</div>
 
         <div id="dialogueText" class="dialogue-text" hidden></div>
+
+        <button
+          id="skipButton"
+          class="skip-hotspot"
+          type="button"
+          hidden
+          aria-label="Saltar esta parte"
+          title="Saltar esta parte"
+        ></button>
 
         <div id="roomHotspots" class="room-hotspots" hidden aria-label="Cuartos de la fundación">
           <button class="room-hotspot room-office" data-room="office" aria-label="Abrir información de la Oficina o Sala extra"></button>
