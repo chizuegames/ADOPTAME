@@ -1,0 +1,154 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+  background: #111;
+  overflow: hidden;
+  font-family: "Trebuchet MS", "Arial Rounded MT Bold", Arial, sans-serif;
+}
+
+body {
+  min-height: 100dvh;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app {
+  width: 100vw;
+  height: 100dvh;
+  display: grid;
+  place-items: center;
+  background: #111;
+}
+
+.stage {
+  position: relative;
+  width: min(100vw, calc(100dvh * 16 / 9));
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  cursor: pointer;
+  outline: none;
+  background: #000;
+  touch-action: manipulation;
+}
+
+.stage:focus-visible {
+  outline: 4px solid #fff;
+  outline-offset: -4px;
+}
+
+.scene-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+}
+
+.stage.is-changing .scene-image,
+.stage.is-changing .start-prompt,
+.stage.is-changing .dialogue-text,
+.stage.is-changing .continue-hint {
+  opacity: 0;
+}
+
+.start-prompt {
+  position: absolute;
+  left: 50%;
+  top: 55%;
+  transform: translateX(-50%);
+  padding: 0.35em 0.85em;
+  border: 3px solid #161616;
+  border-radius: 999px;
+  background: rgba(255, 245, 185, 0.92);
+  color: #171717;
+  font-size: clamp(15px, 2.2vw, 38px);
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  box-shadow: 0 0.18em 0 #111;
+  white-space: nowrap;
+  transition: opacity 180ms ease;
+}
+
+.dialogue-text {
+  position: absolute;
+  left: 12.3%;
+  top: 11.5%;
+  width: 52.8%;
+  height: 41.5%;
+  padding: 3.2% 4.5% 4.8%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #171717;
+  font-size: clamp(11px, 2vw, 34px);
+  font-weight: 800;
+  line-height: 1.2;
+  text-wrap: balance;
+  transition: opacity 180ms ease;
+  pointer-events: none;
+}
+
+.continue-hint {
+  position: absolute;
+  left: 15%;
+  bottom: 6.2%;
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
+  padding: 0.28em 0.58em;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.78);
+  color: #1a1a1a;
+  font-size: clamp(8px, 1vw, 16px);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.72;
+  transition: opacity 180ms ease;
+  pointer-events: none;
+}
+
+.continue-arrow {
+  display: inline-block;
+  font-size: 1.45em;
+  line-height: 0.7;
+  animation: nudge 900ms ease-in-out infinite alternate;
+}
+
+@keyframes nudge {
+  from { transform: translateX(0); }
+  to { transform: translateX(0.22em); }
+}
+
+@media (orientation: portrait) {
+  .dialogue-text {
+    font-size: clamp(11px, 3vw, 21px);
+  }
+
+  .start-prompt {
+    font-size: clamp(14px, 4vw, 26px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene-image,
+  .start-prompt,
+  .dialogue-text,
+  .continue-hint {
+    transition: none;
+  }
+
+  .continue-arrow {
+    animation: none;
+  }
+}
