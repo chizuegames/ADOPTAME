@@ -7,9 +7,9 @@ body {
   width: 100%;
   min-height: 100%;
   margin: 0;
-  background: #111;
   overflow: hidden;
   font-family: "Trebuchet MS", "Arial Rounded MT Bold", Arial, sans-serif;
+  background: #f7efe9;
 }
 
 body {
@@ -29,24 +29,34 @@ button {
   display: grid;
   place-items: center;
   overflow: hidden;
-  background: #111;
+  background: #f7efe9;
 }
 
 /*
-  La app conserva internamente su lienzo 16:9 para que todas las imágenes,
-  textos y zonas táctiles sigan coincidiendo, pero el lienzo completo gira
-  90 grados. El resultado visible es un formato 9:16 vertical.
+  El contenedor visible tiene proporción 9:16. Dentro conservamos el lienzo
+  original 16:9 y lo giramos -90°. Así no hay que recalcular textos ni zonas
+  táctiles y, al mismo tiempo, evitamos que el elemento rotado sea recortado.
 */
-.stage {
+.stage-shell {
   position: relative;
-  width: min(100dvh, calc(100vw * 16 / 9));
+  width: min(100vw, calc(100dvh * 9 / 16));
+  aspect-ratio: 9 / 16;
+  overflow: hidden;
+  background: #f7efe9;
+}
+
+.stage {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 177.7777778%;
   aspect-ratio: 16 / 9;
   overflow: hidden;
   cursor: pointer;
   outline: none;
-  background: #000;
+  background: #fff;
   touch-action: manipulation;
-  transform: rotate(90deg);
+  transform: translate(-50%, -50%) rotate(-90deg);
   transform-origin: center center;
 }
 
@@ -66,6 +76,7 @@ button {
 
 .stage[data-mode="detail"] .scene-image {
   object-fit: contain;
+  background: #fff;
 }
 
 .start-prompt {
@@ -162,7 +173,6 @@ button {
   outline: none;
 }
 
-/* Posiciones sobre IMG2. Todas están expresadas en porcentajes para funcionar en PC y celular. */
 .room-office {
   left: 27.3%;
   top: 20.9%;
@@ -229,10 +239,6 @@ button {
   outline-offset: 2px;
 }
 
-/*
-  Como el lienzo ya está girado a 9:16, usamos la dimensión corta del
-  dispositivo para que los textos mantengan una escala consistente.
-*/
 @media (orientation: portrait) {
   .dialogue-text {
     font-size: clamp(11px, 2.15vh, 34px);
