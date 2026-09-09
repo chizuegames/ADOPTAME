@@ -1,7 +1,8 @@
 const scenes = [
   {
     image: "IMGI.png",
-    type: "start"
+    type: "start",
+    text: "Toca para iniciar"
   },
   {
     image: "IMG1.png",
@@ -17,8 +18,8 @@ const scenes = [
 
 const stage = document.getElementById("stage");
 const sceneImage = document.getElementById("sceneImage");
+const startPrompt = document.getElementById("startPrompt");
 const dialogueText = document.getElementById("dialogueText");
-const continueHint = document.getElementById("continueHint");
 
 let sceneIndex = 0;
 let currentImage = "";
@@ -44,12 +45,13 @@ function renderScene() {
     : "Escena en la Fundación Corazón Peludito";
 
   if (scene.type === "start") {
+    startPrompt.hidden = false;
+    startPrompt.textContent = scene.text;
     dialogueText.hidden = true;
-    continueHint.hidden = true;
   } else {
+    startPrompt.hidden = true;
     dialogueText.hidden = false;
     dialogueText.textContent = scene.text;
-    continueHint.hidden = false;
   }
 }
 
