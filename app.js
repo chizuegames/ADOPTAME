@@ -7,12 +7,16 @@ const scenes = [
   {
     image: "IMG1.png",
     type: "dialogue",
-    text: "¡Hola, amigos! Y bienvenidos a la Fundación Corazón Peludito."
+    text: "¡Hola, amigos! Y bienvenidos a la Fundación Corazón Peludito.",
+    skipTo: 3,
+    skipClass: "skip-img1"
   },
   {
     image: "IMG1.png",
     type: "dialogue",
-    text: "Hoy vamos a jugar el modo historia de Adóptame y, de paso, aprenderemos algunas cosillas por el camino."
+    text: "Hoy vamos a jugar el modo historia de Adóptame y, de paso, aprenderemos algunas cosillas por el camino.",
+    skipTo: 3,
+    skipClass: "skip-img1"
   },
   {
     image: "IMG2.png",
@@ -54,10 +58,16 @@ const startPrompt = document.getElementById("startPrompt");
 const dialogueText = document.getElementById("dialogueText");
 const roomHotspots = document.getElementById("roomHotspots");
 const roomBack = document.getElementById("roomBack");
+const skipButton = document.getElementById("skipButton");
+const bgMusic = document.getElementById("bgMusic");
+const musicToggle = document.getElementById("musicToggle");
 
 let sceneIndex = 0;
 let currentImage = "";
 let openRoomKey = null;
+let musicStarted = false;
+
+bgMusic.volume = 0.14;
 
 // Precarga todas las imágenes para que al abrir un cuarto el cambio sea inmediato.
 const imagesToPreload = [
@@ -80,6 +90,31 @@ function setSceneImage(src, alt) {
   sceneImage.alt = alt;
 }
 
+function updateMusicButton() {
+  const muted = bgMusic.muted;
+  musicToggle.textContent = muted ? "🔇" : "🔊";
+  musicToggle.setAttribute("aria-label", muted ? "Activar música" : "Silenciar música");
+  musicToggle.title = muted ? "Activar música" : "Silenciar música";
+}
+
+function startBackgroundMusic() {
+  if (musicStarted) return;
+
+  musicStarted = true;
+  bgMusic.muted = false;
+  musicToggle.hidden = false;
+  updateMusicButton();
+
+  const playPromise = bgMusic.play();
+  if (playPromise && typeof playPromise.catch === "function") {
+    playPromise.catch(() => {
+      // Si el navegador bloquea el audio, el botón queda disponible para iniciarlo manualmente.
+      bgMusic.muted = true;
+      updateMusicButton();
+    });
+  }
+}
+
 function renderScene() {
   const scene = scenes[sceneIndex];
 
@@ -88,6 +123,9 @@ function renderScene() {
   roomHotspots.hidden = true;
   dialogueText.classList.remove("map-dialogue");
   stage.dataset.mode = scene.type;
+
+  skipButton.hidden = true;
+  skipButton.classList.remove("skip-img1", "skip-img2");
 
   setSceneImage(
     scene.image,
@@ -108,6 +146,11 @@ function renderScene() {
   dialogueText.hidden = false;
   dialogueText.textContent = scene.text;
 
+  if (Number.isInteger(scene.skipTo)) {
+    skipButton.hidden = false;
+    if (scene.skipClass) skipButton.classList.add(scene.skipClass);
+  }
+
   if (scene.type === "room-map") {
     dialogueText.classList.add("map-dialogue");
     roomHotspots.hidden = false;
@@ -123,10 +166,22 @@ function renderScene() {
 function advanceScene() {
   const scene = scenes[sceneIndex];
 
+  if (scene.type === "start") {
+    startBackgroundMusic();
+  }
+
   // El mapa queda abierto para explorar sus cuartos; no avanza al tocar el fondo.
   if (scene.type === "room-map") return;
 
   sceneIndex = Math.min(sceneIndex + 1, scenes.length - 1);
+  renderScene();
+}
+
+function skipCurrentPart() {
+  const scene = scenes[sceneIndex];
+  if (!Number.isInteger(scene.skipTo)) return;
+
+  sceneIndex = Math.min(scene.skipTo, scenes.length - 1);
   renderScene();
 }
 
@@ -143,6 +198,7 @@ function openRoom(roomKey) {
   dialogueText.hidden = true;
   roomHotspots.hidden = true;
   roomBack.hidden = false;
+  skipButton.hidden = true;
 
   stage.setAttribute(
     "aria-label",
@@ -167,6 +223,11 @@ stage.addEventListener("click", event => {
   advanceScene();
 });
 
+skipButton.addEventListener("click", event => {
+  event.stopPropagation();
+  skipCurrentPart();
+});
+
 roomHotspots.addEventListener("click", event => {
   const button = event.target.closest(".room-hotspot");
   if (!button) return;
@@ -178,6 +239,25 @@ roomHotspots.addEventListener("click", event => {
 roomBack.addEventListener("click", event => {
   event.stopPropagation();
   returnToRoomMap();
+});
+
+musicToggle.addEventListener("click", event => {
+  event.stopPropagation();
+
+  if (!musicStarted) {
+    startBackgroundMusic();
+    return;
+  }
+
+  bgMusic.muted = !bgMusic.muted;
+
+  if (!bgMusic.muted && bgMusic.paused) {
+    bgMusic.play().catch(() => {
+      bgMusic.muted = true;
+    });
+  }
+
+  updateMusicButton();
 });
 
 stage.addEventListener("keydown", event => {
