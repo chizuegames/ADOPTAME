@@ -52,6 +52,24 @@ body {
   pointer-events: none;
 }
 
+.start-prompt {
+  position: absolute;
+  left: 50%;
+  top: 55%;
+  transform: translateX(-50%);
+  padding: 0.35em 0.85em;
+  border: 3px solid #161616;
+  border-radius: 999px;
+  background: rgba(255, 245, 185, 0.92);
+  color: #171717;
+  font-size: clamp(15px, 2.2vw, 38px);
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  box-shadow: 0 0.18em 0 #111;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 .dialogue-text {
   position: absolute;
   left: 12.3%;
@@ -71,50 +89,17 @@ body {
   pointer-events: none;
 }
 
-.dialogue-text[hidden],
-.continue-hint[hidden] {
+.start-prompt[hidden],
+.dialogue-text[hidden] {
   display: none;
-}
-
-.continue-hint {
-  position: absolute;
-  left: 15%;
-  bottom: 6.2%;
-  display: flex;
-  align-items: center;
-  gap: 0.35em;
-  padding: 0.28em 0.58em;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.78);
-  color: #1a1a1a;
-  font-size: clamp(8px, 1vw, 16px);
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  opacity: 0.72;
-  pointer-events: none;
-}
-
-.continue-arrow {
-  display: inline-block;
-  font-size: 1.45em;
-  line-height: 0.7;
-  animation: nudge 900ms ease-in-out infinite alternate;
-}
-
-@keyframes nudge {
-  from { transform: translateX(0); }
-  to { transform: translateX(0.22em); }
 }
 
 @media (orientation: portrait) {
   .dialogue-text {
     font-size: clamp(11px, 3vw, 21px);
   }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .continue-arrow {
-    animation: none;
+  .start-prompt {
+    font-size: clamp(14px, 4vw, 26px);
   }
 }
