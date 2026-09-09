@@ -90,6 +90,7 @@ const roomBack = document.getElementById("roomBack");
 const skipButton = document.getElementById("skipButton");
 const bgMusic = document.getElementById("bgMusic");
 const musicToggle = document.getElementById("musicToggle");
+const previousButton = document.getElementById("previousButton");
 
 let sceneIndex = 0;
 let currentImage = "";
@@ -150,6 +151,7 @@ function renderScene() {
   openRoomKey = null;
   roomBack.hidden = true;
   roomHotspots.hidden = true;
+  previousButton.hidden = sceneIndex === 0;
   dialogueText.classList.remove("map-dialogue");
   stage.dataset.mode = scene.type;
 
@@ -215,6 +217,17 @@ function advanceScene() {
   renderScene();
 }
 
+function previousScene() {
+  if (openRoomKey) {
+    returnToRoomMap();
+    return;
+  }
+
+  if (sceneIndex <= 0) return;
+  sceneIndex -= 1;
+  renderScene();
+}
+
 function skipCurrentPart() {
   const scene = scenes[sceneIndex];
   if (!Number.isInteger(scene.skipTo)) return;
@@ -236,6 +249,7 @@ function openRoom(roomKey) {
   dialogueText.hidden = true;
   roomHotspots.hidden = true;
   roomBack.hidden = false;
+  previousButton.hidden = true;
   skipButton.hidden = true;
 
   stage.setAttribute(
@@ -279,6 +293,11 @@ roomBack.addEventListener("click", event => {
   returnToRoomMap();
 });
 
+previousButton.addEventListener("click", event => {
+  event.stopPropagation();
+  previousScene();
+});
+
 musicToggle.addEventListener("click", event => {
   event.stopPropagation();
 
@@ -304,6 +323,12 @@ stage.addEventListener("keydown", event => {
   if (event.key === "Escape" && openRoomKey) {
     event.preventDefault();
     returnToRoomMap();
+    return;
+  }
+
+  if (event.key === "ArrowLeft" || event.key === "Backspace") {
+    event.preventDefault();
+    previousScene();
     return;
   }
 
