@@ -50,32 +50,6 @@ body {
   height: 100%;
   object-fit: cover;
   pointer-events: none;
-  transition: opacity 180ms ease;
-}
-
-.stage.is-changing .scene-image,
-.stage.is-changing .start-prompt,
-.stage.is-changing .dialogue-text,
-.stage.is-changing .continue-hint {
-  opacity: 0;
-}
-
-.start-prompt {
-  position: absolute;
-  left: 50%;
-  top: 55%;
-  transform: translateX(-50%);
-  padding: 0.35em 0.85em;
-  border: 3px solid #161616;
-  border-radius: 999px;
-  background: rgba(255, 245, 185, 0.92);
-  color: #171717;
-  font-size: clamp(15px, 2.2vw, 38px);
-  font-weight: 900;
-  letter-spacing: 0.01em;
-  box-shadow: 0 0.18em 0 #111;
-  white-space: nowrap;
-  transition: opacity 180ms ease;
 }
 
 .dialogue-text {
@@ -94,8 +68,12 @@ body {
   font-weight: 800;
   line-height: 1.2;
   text-wrap: balance;
-  transition: opacity 180ms ease;
   pointer-events: none;
+}
+
+.dialogue-text[hidden],
+.continue-hint[hidden] {
+  display: none;
 }
 
 .continue-hint {
@@ -114,7 +92,6 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   opacity: 0.72;
-  transition: opacity 180ms ease;
   pointer-events: none;
 }
 
@@ -134,20 +111,9 @@ body {
   .dialogue-text {
     font-size: clamp(11px, 3vw, 21px);
   }
-
-  .start-prompt {
-    font-size: clamp(14px, 4vw, 26px);
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .scene-image,
-  .start-prompt,
-  .dialogue-text,
-  .continue-hint {
-    transition: none;
-  }
-
   .continue-arrow {
     animation: none;
   }
