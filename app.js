@@ -21,7 +21,36 @@ const scenes = [
   {
     image: "IMG2.png",
     type: "room-map",
-    text: "¡Así se ve nuestra fundación! Toca cualquiera de sus cuartos para descubrir qué función cumple."
+    text: "¡Así se ve nuestra fundación! Toca cualquiera de sus cuartos para descubrir qué función cumple.",
+    skipTo: 4,
+    skipClass: "skip-img2"
+  },
+  {
+    image: "IMG1.png",
+    type: "dialogue",
+    text: "También sería bueno que conozcan a nuestro personal, y acá están...",
+    skipTo: 5,
+    skipClass: "skip-img1"
+  },
+  {
+    image: "IMGR1.png",
+    type: "staff",
+    text: ""
+  },
+  {
+    image: "IMGR2.png",
+    type: "staff",
+    text: ""
+  },
+  {
+    image: "IMGR3.png",
+    type: "staff",
+    text: ""
+  },
+  {
+    image: "IMGR4.png",
+    type: "staff",
+    text: ""
   }
 ];
 
@@ -69,7 +98,7 @@ let musicStarted = false;
 
 bgMusic.volume = 0.14;
 
-// Precarga todas las imágenes para que al abrir un cuarto el cambio sea inmediato.
+// Precarga todas las imágenes para que al abrir una escena el cambio sea inmediato.
 const imagesToPreload = [
   ...scenes.map(scene => scene.image),
   ...Object.values(rooms).map(room => room.image)
@@ -131,7 +160,9 @@ function renderScene() {
     scene.image,
     scene.type === "start"
       ? "Portada del modo historia de Adóptame"
-      : "Escena en la Fundación Corazón Peludito"
+      : scene.type === "staff"
+        ? "Presentación del personal de la Fundación Corazón Peludito"
+        : "Escena en la Fundación Corazón Peludito"
   );
 
   if (scene.type === "start") {
@@ -143,8 +174,13 @@ function renderScene() {
   }
 
   startPrompt.hidden = true;
-  dialogueText.hidden = false;
-  dialogueText.textContent = scene.text;
+
+  if (scene.type === "staff") {
+    dialogueText.hidden = true;
+  } else {
+    dialogueText.hidden = false;
+    dialogueText.textContent = scene.text;
+  }
 
   if (Number.isInteger(scene.skipTo)) {
     skipButton.hidden = false;
@@ -156,8 +192,10 @@ function renderScene() {
     roomHotspots.hidden = false;
     stage.setAttribute(
       "aria-label",
-      "Mapa de la Fundación Corazón Peludito. Selecciona uno de los cuartos para conocer su función."
+      "Mapa de la Fundación Corazón Peludito. Selecciona uno de los cuartos para conocer su función o usa la flecha para continuar."
     );
+  } else if (scene.type === "staff") {
+    stage.setAttribute("aria-label", "Presentación del personal. Toca o presiona Enter para continuar.");
   } else {
     stage.setAttribute("aria-label", "Diálogo de la historia. Toca o presiona Enter para continuar.");
   }
@@ -170,7 +208,7 @@ function advanceScene() {
     startBackgroundMusic();
   }
 
-  // El mapa queda abierto para explorar sus cuartos; no avanza al tocar el fondo.
+  // El mapa queda abierto para explorar sus cuartos; se continúa con la flecha naranja.
   if (scene.type === "room-map") return;
 
   sceneIndex = Math.min(sceneIndex + 1, scenes.length - 1);
