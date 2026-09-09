@@ -1,8 +1,7 @@
 const scenes = [
   {
     image: "IMGI.png",
-    type: "start",
-    text: "Toca para iniciar"
+    type: "start"
   },
   {
     image: "IMG1.png",
@@ -18,14 +17,13 @@ const scenes = [
 
 const stage = document.getElementById("stage");
 const sceneImage = document.getElementById("sceneImage");
-const startPrompt = document.getElementById("startPrompt");
 const dialogueText = document.getElementById("dialogueText");
 const continueHint = document.getElementById("continueHint");
 
 let sceneIndex = 0;
-let locked = false;
+let currentImage = "";
 
-// Precarga las imágenes para que el cambio entre escenas sea inmediato.
+// Precarga las imágenes para que los cambios de escena sean inmediatos.
 [...new Set(scenes.map(scene => scene.image))].forEach(src => {
   const img = new Image();
   img.src = src;
@@ -34,18 +32,21 @@ let locked = false;
 function renderScene() {
   const scene = scenes[sceneIndex];
 
-  sceneImage.src = scene.image;
+  // Solo cambia la imagen cuando realmente cambia el fondo.
+  // Si dos diálogos usan la misma imagen, esta permanece fija y únicamente cambia el texto.
+  if (scene.image !== currentImage) {
+    sceneImage.src = scene.image;
+    currentImage = scene.image;
+  }
+
   sceneImage.alt = scene.type === "start"
     ? "Portada del modo historia de Adóptame"
     : "Escena en la Fundación Corazón Peludito";
 
   if (scene.type === "start") {
-    startPrompt.hidden = false;
-    startPrompt.textContent = scene.text;
     dialogueText.hidden = true;
     continueHint.hidden = true;
   } else {
-    startPrompt.hidden = true;
     dialogueText.hidden = false;
     dialogueText.textContent = scene.text;
     continueHint.hidden = false;
@@ -53,20 +54,8 @@ function renderScene() {
 }
 
 function advanceScene() {
-  if (locked) return;
-
-  locked = true;
-  stage.classList.add("is-changing");
-
-  window.setTimeout(() => {
-    sceneIndex = (sceneIndex + 1) % scenes.length;
-    renderScene();
-    stage.classList.remove("is-changing");
-
-    window.setTimeout(() => {
-      locked = false;
-    }, 190);
-  }, 180);
+  sceneIndex = (sceneIndex + 1) % scenes.length;
+  renderScene();
 }
 
 stage.addEventListener("click", advanceScene);
