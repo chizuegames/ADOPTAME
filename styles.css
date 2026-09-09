@@ -131,16 +131,17 @@ button {
 .room-hotspots[hidden],
 .room-back[hidden],
 .skip-hotspot[hidden],
-.music-toggle[hidden] {
+.music-toggle[hidden],
+.previous-button[hidden] {
   display: none;
 }
 
-/* Botón de música: está fuera del lienzo girado para mantenerse siempre arriba a la izquierda en celular. */
-.music-toggle {
+/* Controles flotantes que permanecen derechos aunque el contenido esté girado. */
+.music-toggle,
+.previous-button {
   position: absolute;
   z-index: 20;
   top: max(10px, env(safe-area-inset-top));
-  left: max(10px, env(safe-area-inset-left));
   width: clamp(38px, 11vw, 54px);
   height: clamp(38px, 11vw, 54px);
   display: grid;
@@ -150,14 +151,25 @@ button {
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.92);
   color: #222;
-  font-size: clamp(18px, 5.4vw, 27px);
   line-height: 1;
   cursor: pointer;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.22);
   touch-action: manipulation;
 }
 
-.music-toggle:active {
+.music-toggle {
+  left: max(10px, env(safe-area-inset-left));
+  font-size: clamp(18px, 5.4vw, 27px);
+}
+
+.previous-button {
+  right: max(10px, env(safe-area-inset-right));
+  font-size: clamp(24px, 7vw, 34px);
+  font-weight: 900;
+}
+
+.music-toggle:active,
+.previous-button:active {
   transform: scale(0.94);
 }
 
@@ -186,7 +198,7 @@ button {
   height: 15.7%;
 }
 
-/* Preparado para futuras pantallas con flecha en la esquina superior derecha. */
+/* Flecha de IMG2: esquina superior derecha de la imagen horizontal original. */
 .skip-hotspot.skip-img2 {
   left: 87.4%;
   top: 4.2%;
@@ -323,7 +335,8 @@ button {
     transition: none;
   }
 
-  .music-toggle:active {
+  .music-toggle:active,
+  .previous-button:active {
     transform: none;
   }
 }
