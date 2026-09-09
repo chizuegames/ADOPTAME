@@ -28,18 +28,26 @@ button {
   height: 100dvh;
   display: grid;
   place-items: center;
+  overflow: hidden;
   background: #111;
 }
 
+/*
+  La app conserva internamente su lienzo 16:9 para que todas las imágenes,
+  textos y zonas táctiles sigan coincidiendo, pero el lienzo completo gira
+  90 grados. El resultado visible es un formato 9:16 vertical.
+*/
 .stage {
   position: relative;
-  width: min(100vw, calc(100dvh * 16 / 9));
+  width: min(100dvh, calc(100vw * 16 / 9));
   aspect-ratio: 16 / 9;
   overflow: hidden;
   cursor: pointer;
   outline: none;
   background: #000;
   touch-action: manipulation;
+  transform: rotate(90deg);
+  transform-origin: center center;
 }
 
 .stage:focus-visible {
@@ -221,21 +229,25 @@ button {
   outline-offset: 2px;
 }
 
+/*
+  Como el lienzo ya está girado a 9:16, usamos la dimensión corta del
+  dispositivo para que los textos mantengan una escala consistente.
+*/
 @media (orientation: portrait) {
   .dialogue-text {
-    font-size: clamp(11px, 3vw, 21px);
+    font-size: clamp(11px, 2.15vh, 34px);
   }
 
   .dialogue-text.map-dialogue {
-    font-size: clamp(9px, 2.45vw, 17px);
+    font-size: clamp(9px, 1.65vh, 27px);
   }
 
   .start-prompt {
-    font-size: clamp(14px, 4vw, 26px);
+    font-size: clamp(14px, 2.5vh, 38px);
   }
 
   .room-back {
-    font-size: clamp(10px, 2.4vw, 16px);
+    font-size: clamp(10px, 1.45vh, 21px);
   }
 }
 
