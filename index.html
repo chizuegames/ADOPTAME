@@ -3,35 +3,37 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#f47a00" />
+  <meta name="theme-color" content="#f7efe9" />
   <title>Adóptame · Modo historia</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <main id="app" class="app" aria-live="polite">
-    <section
-      id="stage"
-      class="stage"
-      tabindex="0"
-      aria-label="Historia interactiva. Toca o presiona Enter para continuar."
-    >
-      <img id="sceneImage" class="scene-image" src="IMGI.png" alt="" draggable="false" />
+    <div class="stage-shell">
+      <section
+        id="stage"
+        class="stage"
+        tabindex="0"
+        aria-label="Historia interactiva. Toca o presiona Enter para continuar."
+      >
+        <img id="sceneImage" class="scene-image" src="IMGI.png" alt="" draggable="false" />
 
-      <div id="startPrompt" class="start-prompt">Toca para iniciar</div>
+        <div id="startPrompt" class="start-prompt">Toca para iniciar</div>
 
-      <div id="dialogueText" class="dialogue-text" hidden></div>
+        <div id="dialogueText" class="dialogue-text" hidden></div>
 
-      <div id="roomHotspots" class="room-hotspots" hidden aria-label="Cuartos de la fundación">
-        <button class="room-hotspot room-office" data-room="office" aria-label="Abrir información de la Oficina o Sala extra"></button>
-        <button class="room-hotspot room-break" data-room="break" aria-label="Abrir información de la Sala de receso"></button>
-        <button class="room-hotspot room-reception" data-room="reception" aria-label="Abrir información de la Recepción"></button>
-        <button class="room-hotspot room-stimulation" data-room="stimulation" aria-label="Abrir información de la Sala de estimulación"></button>
-        <button class="room-hotspot room-rest" data-room="rest" aria-label="Abrir información de la Sala de descanso"></button>
-        <button class="room-hotspot room-vet" data-room="vet" aria-label="Abrir información del Consultorio veterinario"></button>
-      </div>
+        <div id="roomHotspots" class="room-hotspots" hidden aria-label="Cuartos de la fundación">
+          <button class="room-hotspot room-office" data-room="office" aria-label="Abrir información de la Oficina o Sala extra"></button>
+          <button class="room-hotspot room-break" data-room="break" aria-label="Abrir información de la Sala de receso"></button>
+          <button class="room-hotspot room-reception" data-room="reception" aria-label="Abrir información de la Recepción"></button>
+          <button class="room-hotspot room-stimulation" data-room="stimulation" aria-label="Abrir información de la Sala de estimulación"></button>
+          <button class="room-hotspot room-rest" data-room="rest" aria-label="Abrir información de la Sala de descanso"></button>
+          <button class="room-hotspot room-vet" data-room="vet" aria-label="Abrir información del Consultorio veterinario"></button>
+        </div>
 
-      <button id="roomBack" class="room-back" type="button" hidden>← Volver</button>
-    </section>
+        <button id="roomBack" class="room-back" type="button" hidden>← Volver</button>
+      </section>
+    </div>
   </main>
 
   <script src="app.js"></script>
