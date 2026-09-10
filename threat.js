@@ -1,5 +1,5 @@
 /* =========================================================
-   EXTENSIÓN: TARJETAS DE AMENAZA
+   EXTENSIÓN: TARJETAS DE AMENAZA + PRÁCTICA
    ========================================================= */
 
 scenes.push(
@@ -20,6 +20,18 @@ scenes.push(
     type: "threat-card",
     threatKey: "S7",
     text: "Acá tenemos otro ejemplo. Recuerden que la parte superior de la tarjeta siempre se aplica. Y si lanzan el dado dos veces y obtienen el mismo número, esa amenaza solo se hará efectiva una vez. La única excepción son las donaciones, que sí pueden activarse varias veces."
+  },
+  {
+    image: "IMG4E.png",
+    type: "practice-board",
+    practiceStep: "intro",
+    text: "¡Perfecto! Ahora que ya conoces cómo funciona todo, vayamos a la práctica."
+  },
+  {
+    image: "IMG4E.png",
+    type: "practice-board",
+    practiceStep: "adopter",
+    text: "Ahora vamos a resolver la carta de amenaza actual. Primero, tomaremos un adoptante de su mazo y lo colocaremos debajo de la sala de recepción."
   }
 );
 
@@ -48,6 +60,11 @@ const threatTexts = {
   }
 };
 
+["IMGRE.png", "IMGRE1.png", "IMG4E.png", "lorena.png"].forEach(src => {
+  const img = new Image();
+  img.src = src;
+});
+
 const threatLayer = document.createElement("div");
 threatLayer.setAttribute("aria-label", "Zonas interactivas de la tarjeta de amenaza");
 Object.assign(threatLayer.style, {
@@ -59,7 +76,6 @@ Object.assign(threatLayer.style, {
 });
 stage.appendChild(threatLayer);
 
-/* Coordenadas calculadas con base en el mapeo A1-A9 enviado. */
 const threatRects = {
   A1: { left: "25.4%", top: "7.8%", width: "11.6%", height: "24.7%" },
   A2: { left: "37.0%", top: "7.8%", width: "9.1%", height: "24.7%" },
@@ -95,10 +111,9 @@ Object.entries(threatRects).forEach(([key, rect]) => {
   threatButtons[key] = button;
 });
 
-/* Flecha inferior izquierda de IMGRE para pasar a IMGRE1. */
 const threatNextHotspot = document.createElement("button");
 threatNextHotspot.type = "button";
-threatNextHotspot.setAttribute("aria-label", "Continuar a la siguiente tarjeta de amenaza");
+threatNextHotspot.setAttribute("aria-label", "Continuar");
 threatNextHotspot.title = "Continuar";
 Object.assign(threatNextHotspot.style, {
   position: "absolute",
@@ -126,14 +141,19 @@ function resetThreatSelection() {
 function hideThreatLayer() {
   activeThreatKey = null;
   threatLayer.style.display = "none";
-  threatNextHotspot.style.display = "none";
   resetThreatSelection();
 }
 
 function showThreatLayer(scene) {
   activeThreatKey = scene.threatKey;
   threatLayer.style.display = "block";
-  threatNextHotspot.style.display = scene.threatKey === "S6" ? "block" : "none";
+  threatNextHotspot.style.display = "block";
+  threatNextHotspot.setAttribute(
+    "aria-label",
+    scene.threatKey === "S6"
+      ? "Continuar al siguiente ejemplo de amenaza"
+      : "Continuar a la práctica"
+  );
 }
 
 function applyThreatDialogueLayout() {
@@ -162,6 +182,155 @@ function explainThreat(key) {
   });
 }
 
+const practiceLayer = document.createElement("div");
+practiceLayer.setAttribute("aria-label", "Animación de práctica");
+Object.assign(practiceLayer.style, {
+  position: "absolute",
+  inset: "0",
+  zIndex: "23",
+  display: "none",
+  pointerEvents: "none"
+});
+stage.appendChild(practiceLayer);
+
+const practiceThreatHighlight = document.createElement("div");
+Object.assign(practiceThreatHighlight.style, {
+  position: "absolute",
+  left: "7.4%",
+  top: "10.1%",
+  width: "11.5%",
+  height: "29.2%",
+  display: "none",
+  border: "5px solid #ff8a18",
+  borderRadius: "15px",
+  background: "rgba(255, 138, 24, 0.06)",
+  boxShadow: "0 0 0 5px rgba(255,255,255,.74), 0 0 24px 9px rgba(255,138,24,.72)",
+  pointerEvents: "none"
+});
+practiceLayer.appendChild(practiceThreatHighlight);
+
+const practiceLorena = document.createElement("img");
+practiceLorena.src = "lorena.png";
+practiceLorena.alt = "Lorena";
+practiceLorena.draggable = false;
+practiceLorena.setAttribute("aria-hidden", "true");
+Object.assign(practiceLorena.style, {
+  position: "absolute",
+  zIndex: "24",
+  display: "none",
+  width: "8.4%",
+  height: "auto",
+  left: "8.9%",
+  top: "66.1%",
+  opacity: "1",
+  transform: "scale(1)",
+  filter: "drop-shadow(0 6px 10px rgba(0,0,0,.22))",
+  pointerEvents: "none"
+});
+practiceLayer.appendChild(practiceLorena);
+
+let practiceTimers = [];
+
+function clearPracticeTimers() {
+  practiceTimers.forEach(timer => clearTimeout(timer));
+  practiceTimers = [];
+}
+
+function practiceLater(delay, callback) {
+  const timer = setTimeout(callback, delay);
+  practiceTimers.push(timer);
+}
+
+function hidePracticeLayer() {
+  clearPracticeTimers();
+  practiceLayer.style.display = "none";
+  practiceThreatHighlight.style.display = "none";
+  practiceThreatHighlight.style.animation = "none";
+  practiceLorena.style.display = "none";
+  practiceLorena.style.transition = "none";
+  practiceLorena.style.left = "8.9%";
+  practiceLorena.style.top = "66.1%";
+  practiceLorena.style.opacity = "1";
+  practiceLorena.style.transform = "scale(1)";
+}
+
+function clearExtensionDialogueStyle() {
+  dialogueText.style.background = "";
+  dialogueText.style.border = "";
+  dialogueText.style.borderRadius = "";
+  dialogueText.style.color = "";
+  dialogueText.style.boxShadow = "";
+  dialogueText.style.textAlign = "";
+  dialogueText.style.overflow = "";
+}
+
+function applyPracticeDialogueLayout() {
+  resetDialogueLayout();
+  dialogueText.style.left = "34.0%";
+  dialogueText.style.top = "74.0%";
+  dialogueText.style.width = "56.0%";
+  dialogueText.style.height = "17.0%";
+  dialogueText.style.padding = "1.8% 2.4%";
+  dialogueText.style.fontSize = "clamp(13px, calc(1.15vw + 3px), 26px)";
+  dialogueText.style.lineHeight = "1.18";
+  dialogueText.style.alignItems = "center";
+  dialogueText.style.justifyContent = "center";
+  dialogueText.style.background = "#ffffff";
+  dialogueText.style.border = "4px solid #111111";
+  dialogueText.style.borderRadius = "18px";
+  dialogueText.style.color = "#111111";
+  dialogueText.style.boxShadow = "0 2px 0 rgba(0,0,0,.08)";
+  dialogueText.style.textAlign = "center";
+  dialogueText.style.overflow = "hidden";
+}
+
+function showPracticeIntro() {
+  practiceLayer.style.display = "block";
+  practiceThreatHighlight.style.display = "none";
+  practiceLorena.style.display = "none";
+}
+
+function animateLorenaToReception() {
+  practiceLayer.style.display = "block";
+  practiceThreatHighlight.style.display = "block";
+  practiceThreatHighlight.style.animation = "none";
+  practiceThreatHighlight.animate(
+    [
+      { opacity: 0.48, transform: "scale(.98)" },
+      { opacity: 1, transform: "scale(1.03)" },
+      { opacity: 0.72, transform: "scale(1)" }
+    ],
+    { duration: 900, iterations: 2, easing: "ease-in-out" }
+  );
+
+  practiceLorena.style.display = "block";
+  practiceLorena.style.transition = "none";
+  practiceLorena.style.left = "8.9%";
+  practiceLorena.style.top = "66.1%";
+  practiceLorena.style.width = "8.4%";
+  practiceLorena.style.opacity = "0";
+  practiceLorena.style.transform = "scale(.88)";
+
+  practiceLater(160, () => {
+    practiceLorena.style.transition = "opacity 220ms ease, transform 220ms ease";
+    practiceLorena.style.opacity = "1";
+    practiceLorena.style.transform = "scale(1)";
+  });
+
+  practiceLater(760, () => {
+    practiceLorena.style.transition = [
+      "left 1100ms cubic-bezier(0.22, 1, 0.36, 1)",
+      "top 1100ms cubic-bezier(0.22, 1, 0.36, 1)",
+      "transform 1100ms cubic-bezier(0.22, 1, 0.36, 1)"
+    ].join(", ");
+    practiceLorena.style.left = "26.0%";
+    practiceLorena.style.top = "66.1%";
+    practiceLorena.style.transform = "scale(1)";
+  });
+
+  interactionLockedUntil = Date.now() + 1900;
+}
+
 function showCompletedRangoTreatment() {
   clearStageAnimations();
   showHealthTokensPlaced();
@@ -170,10 +339,12 @@ function showCompletedRangoTreatment() {
   placeAnimatedImage(affectionToken, "19.95%", "40.5%", "6.1%", "1", "1");
 }
 
-/* Extiende el render existente sin alterar el resto del tutorial. */
 const baseRenderSceneForThreats = renderScene;
 renderScene = function () {
   hideThreatLayer();
+  hidePracticeLayer();
+  clearExtensionDialogueStyle();
+
   baseRenderSceneForThreats();
 
   const scene = scenes[sceneIndex];
@@ -193,12 +364,34 @@ renderScene = function () {
       "aria-label",
       scene.threatKey === "S6"
         ? "Tarjeta de amenaza interactiva. Toca una zona para conocer su función o usa la flecha inferior izquierda para ver el siguiente ejemplo."
-        : "Tarjeta de amenaza interactiva. Toca una zona para conocer su función."
+        : "Tarjeta de amenaza interactiva. Toca una zona para conocer su función o usa la flecha inferior izquierda para continuar a la práctica."
     );
+  }
+
+  if (scene.type === "practice-board") {
+    dialogueText.hidden = false;
+    dialogueText.textContent = scene.text;
+    applyPracticeDialogueLayout();
+    previousButton.hidden = false;
+
+    if (scene.practiceStep === "intro") {
+      showPracticeIntro();
+      stage.setAttribute(
+        "aria-label",
+        "Inicio de la práctica. Toca o presiona Enter para continuar."
+      );
+    }
+
+    if (scene.practiceStep === "adopter") {
+      animateLorenaToReception();
+      stage.setAttribute(
+        "aria-label",
+        "Práctica: la carta de amenaza indica que llega un adoptante. Lorena se mueve desde el mazo hasta debajo de la sala de recepción."
+      );
+    }
   }
 };
 
-/* Las tarjetas de amenaza no avanzan tocando cualquier parte. */
 const baseAdvanceSceneForThreats = advanceScene;
 advanceScene = function () {
   if (scenes[sceneIndex]?.type === "threat-card") return;
@@ -215,7 +408,8 @@ threatNextHotspot.addEventListener("click", event => {
   event.preventDefault();
   event.stopPropagation();
 
-  if (scenes[sceneIndex]?.type !== "threat-card" || activeThreatKey !== "S6") return;
+  if (scenes[sceneIndex]?.type !== "threat-card") return;
+
   if (sceneIndex < scenes.length - 1) {
     sceneIndex += 1;
     renderScene();
