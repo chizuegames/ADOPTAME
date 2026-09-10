@@ -51,6 +51,18 @@ const scenes = [
     image: "IMGR4.png",
     type: "staff",
     text: ""
+  },
+  {
+    image: "IMG1.png",
+    type: "dialogue",
+    text: "Bueno, ahora que ya conocemos la fundación y a nuestro equipo, vamos a conocer las cartas de los animales...",
+    skipTo: 10,
+    skipClass: "skip-img1"
+  },
+  {
+    image: "IMG3.png",
+    type: "animal-card",
+    text: "Acá tenemos a Rango, la iguana. Como pueden ver, está en blanco y negro, y eso significa que necesita nuestra ayuda."
   }
 ];
 
@@ -152,7 +164,7 @@ function renderScene() {
   roomBack.hidden = true;
   roomHotspots.hidden = true;
   previousButton.hidden = sceneIndex === 0;
-  dialogueText.classList.remove("map-dialogue");
+  dialogueText.classList.remove("map-dialogue", "animal-dialogue");
   stage.dataset.mode = scene.type;
 
   skipButton.hidden = true;
@@ -164,7 +176,9 @@ function renderScene() {
       ? "Portada del modo historia de Adóptame"
       : scene.type === "staff"
         ? "Presentación del personal de la Fundación Corazón Peludito"
-        : "Escena en la Fundación Corazón Peludito"
+        : scene.type === "animal-card"
+          ? "Carta de Rango, la iguana"
+          : "Escena en la Fundación Corazón Peludito"
   );
 
   if (scene.type === "start") {
@@ -198,6 +212,9 @@ function renderScene() {
     );
   } else if (scene.type === "staff") {
     stage.setAttribute("aria-label", "Presentación del personal. Toca o presiona Enter para continuar.");
+  } else if (scene.type === "animal-card") {
+    dialogueText.classList.add("animal-dialogue");
+    stage.setAttribute("aria-label", "Carta de Rango, la iguana. Toca o presiona Enter para continuar.");
   } else {
     stage.setAttribute("aria-label", "Diálogo de la historia. Toca o presiona Enter para continuar.");
   }
