@@ -70,6 +70,17 @@ const scenes = [
     image: "IMG1.png",
     type: "dialogue",
     text: "Antes de continuar, recuerden que vamos a jugar por turnos. Yo ocuparé el último, así que dejemos que Valentina nos muestre qué hacer primero."
+  },
+  {
+    image: "IMG3V.png",
+    type: "animal-card",
+    text: "Rango necesita más cuidados de salud que cualquier otra cosa, así que lo mejor será llevarlo al consultorio veterinario. Allí podré empezar a tratarlo."
+  },
+  {
+    image: "IMG2V.png",
+    type: "room-demo",
+    text: "Primero tomaremos a Rango y lo llevaremos a la habitación que necesitamos. En este caso, al consultorio veterinario.",
+    animateRango: true
   }
 ];
 
@@ -100,16 +111,40 @@ const cardHighlights = {
   requirements: document.getElementById("animalRequirementsHighlight")
 };
 
+const rangoMini = document.createElement("img");
+rangoMini.src = "rangomini.png";
+rangoMini.alt = "Carta mini de Rango";
+rangoMini.draggable = false;
+rangoMini.setAttribute("aria-hidden", "true");
+Object.assign(rangoMini.style, {
+  position: "absolute",
+  zIndex: "18",
+  display: "none",
+  pointerEvents: "none",
+  width: "11.2%",
+  height: "auto",
+  left: "4.5%",
+  top: "70%",
+  opacity: "0",
+  transform: "scale(0.85)",
+  filter: "drop-shadow(0 8px 12px rgba(0,0,0,.28))"
+});
+stage.appendChild(rangoMini);
+
 let sceneIndex = 0;
 let currentImage = "";
 let openRoomKey = null;
 let musicStarted = false;
+let interactionLockedUntil = 0;
+let rangoRevealTimer = null;
+let rangoMoveTimer = null;
 
 bgMusic.volume = 0.14;
 
 const imagesToPreload = [
   ...scenes.map(scene => scene.image),
-  ...Object.values(rooms).map(room => room.image)
+  ...Object.values(rooms).map(room => room.image),
+  "rangomini.png"
 ];
 
 [...new Set(imagesToPreload)].forEach(src => {
@@ -141,6 +176,50 @@ function applyAnimalHighlights(scene) {
   });
 }
 
+function clearRangoAnimation() {
+  clearTimeout(rangoRevealTimer);
+  clearTimeout(rangoMoveTimer);
+  rangoRevealTimer = null;
+  rangoMoveTimer = null;
+  rangoMini.style.transition = "none";
+  rangoMini.style.display = "none";
+  rangoMini.style.opacity = "0";
+}
+
+function animateRangoToVet() {
+  clearRangoAnimation();
+
+  rangoMini.style.display = "block";
+  rangoMini.style.transition = "none";
+  rangoMini.style.left = "4.5%";
+  rangoMini.style.top = "70%";
+  rangoMini.style.width = "11.2%";
+  rangoMini.style.opacity = "0";
+  rangoMini.style.transform = "scale(0.85)";
+
+  rangoRevealTimer = setTimeout(() => {
+    rangoMini.style.transition = "opacity 180ms ease, transform 180ms ease";
+    rangoMini.style.opacity = "1";
+    rangoMini.style.transform = "scale(1)";
+  }, 80);
+
+  rangoMoveTimer = setTimeout(() => {
+    rangoMini.style.transition = [
+      "left 1200ms cubic-bezier(0.22, 1, 0.36, 1)",
+      "top 1200ms cubic-bezier(0.22, 1, 0.36, 1)",
+      "width 1200ms cubic-bezier(0.22, 1, 0.36, 1)",
+      "transform 1200ms cubic-bezier(0.22, 1, 0.36, 1)"
+    ].join(", ");
+
+    rangoMini.style.left = "75.2%";
+    rangoMini.style.top = "52.4%";
+    rangoMini.style.width = "10.8%";
+    rangoMini.style.transform = "scale(1)";
+  }, 420);
+
+  interactionLockedUntil = Date.now() + 1700;
+}
+
 function updateMusicButton() {
   const muted = bgMusic.muted;
   musicToggle.textContent = muted ? "🔇" : "🔊";
@@ -169,10 +248,12 @@ function renderScene() {
   const scene = scenes[sceneIndex];
 
   openRoomKey = null;
+  interactionLockedUntil = 0;
   roomBack.hidden = true;
   roomHotspots.hidden = true;
   previousButton.hidden = sceneIndex === 0;
   hideAllCardHighlights();
+  clearRangoAnimation();
 
   dialogueText.classList.remove("map-dialogue", "animal-dialogue");
   skipButton.hidden = true;
@@ -183,6 +264,7 @@ function renderScene() {
   if (scene.type === "start") altText = "Portada del modo historia de Adóptame";
   if (scene.type === "staff") altText = "Presentación del personal de la Fundación Corazón Peludito";
   if (scene.type === "animal-card") altText = "Carta de animal de la Fundación Corazón Peludito";
+  if (scene.type === "room-demo") altText = "Demostración de cómo mover a Rango al consultorio veterinario";
   setSceneImage(scene.image, altText);
 
   if (scene.type === "start") {
@@ -212,6 +294,10 @@ function renderScene() {
     dialogueText.classList.add("animal-dialogue");
     applyAnimalHighlights(scene);
     stage.setAttribute("aria-label", "Carta de animal. Toca o presiona Enter para continuar.");
+  } else if (scene.type === "room-demo") {
+    dialogueText.classList.add("map-dialogue");
+    if (scene.animateRango) animateRangoToVet();
+    stage.setAttribute("aria-label", "Demostración de cómo mover a Rango al consultorio veterinario. Espera a que termine la animación y luego toca para continuar.");
   } else {
     stage.setAttribute("aria-label", "Diálogo de la historia. Toca o presiona Enter para continuar.");
   }
@@ -222,6 +308,7 @@ function advanceScene() {
 
   if (scene.type === "start") startBackgroundMusic();
   if (scene.type === "room-map") return;
+  if (Date.now() < interactionLockedUntil) return;
 
   if (sceneIndex < scenes.length - 1) {
     sceneIndex += 1;
@@ -263,6 +350,7 @@ function openRoom(roomKey) {
   previousButton.hidden = true;
   skipButton.hidden = true;
   hideAllCardHighlights();
+  clearRangoAnimation();
 
   stage.setAttribute("aria-label", `Información de ${room.name}. Toca la pantalla o el botón Volver para regresar a la fundación.`);
 }
