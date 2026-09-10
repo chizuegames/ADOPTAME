@@ -287,7 +287,15 @@ function applyPracticeDialogueLayout() {
 function showPracticeIntro() {
   practiceLayer.style.display = "block";
   practiceThreatHighlight.style.display = "none";
-  practiceLorena.style.display = "none";
+
+  // Lorena ya está presente desde el primer instante en que aparece IMG4E.
+  practiceLorena.style.display = "block";
+  practiceLorena.style.transition = "none";
+  practiceLorena.style.left = "8.9%";
+  practiceLorena.style.top = "66.1%";
+  practiceLorena.style.width = "8.4%";
+  practiceLorena.style.opacity = "1";
+  practiceLorena.style.transform = "scale(1)";
 }
 
 function animateLorenaToReception() {
@@ -303,21 +311,17 @@ function animateLorenaToReception() {
     { duration: 900, iterations: 2, easing: "ease-in-out" }
   );
 
+  // En este paso Lorena empieza ya visible en la misma posición del paso anterior;
+  // solo después se desplaza hacia debajo de Recepción.
   practiceLorena.style.display = "block";
   practiceLorena.style.transition = "none";
   practiceLorena.style.left = "8.9%";
   practiceLorena.style.top = "66.1%";
   practiceLorena.style.width = "8.4%";
-  practiceLorena.style.opacity = "0";
-  practiceLorena.style.transform = "scale(.88)";
+  practiceLorena.style.opacity = "1";
+  practiceLorena.style.transform = "scale(1)";
 
-  practiceLater(160, () => {
-    practiceLorena.style.transition = "opacity 220ms ease, transform 220ms ease";
-    practiceLorena.style.opacity = "1";
-    practiceLorena.style.transform = "scale(1)";
-  });
-
-  practiceLater(760, () => {
+  practiceLater(600, () => {
     practiceLorena.style.transition = [
       "left 1100ms cubic-bezier(0.22, 1, 0.36, 1)",
       "top 1100ms cubic-bezier(0.22, 1, 0.36, 1)",
@@ -328,7 +332,7 @@ function animateLorenaToReception() {
     practiceLorena.style.transform = "scale(1)";
   });
 
-  interactionLockedUntil = Date.now() + 1900;
+  interactionLockedUntil = Date.now() + 1800;
 }
 
 function showCompletedRangoTreatment() {
@@ -378,7 +382,7 @@ renderScene = function () {
       showPracticeIntro();
       stage.setAttribute(
         "aria-label",
-        "Inicio de la práctica. Toca o presiona Enter para continuar."
+        "Inicio de la práctica. Lorena ya está visible en su mazo. Toca o presiona Enter para continuar."
       );
     }
 
@@ -386,7 +390,7 @@ renderScene = function () {
       animateLorenaToReception();
       stage.setAttribute(
         "aria-label",
-        "Práctica: la carta de amenaza indica que llega un adoptante. Lorena se mueve desde el mazo hasta debajo de la sala de recepción."
+        "Práctica: la carta de amenaza indica que llega un adoptante. Lorena parte visible desde el mazo y se mueve hasta debajo de la sala de recepción."
       );
     }
   }
