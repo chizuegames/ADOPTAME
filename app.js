@@ -81,6 +81,11 @@ const scenes = [
     type: "room-demo",
     text: "Primero tomaremos a Rango y lo llevaremos a la habitación que necesitamos. En este caso, al consultorio veterinario.",
     animateRango: true
+  },
+  {
+    image: "IMGRV.png",
+    type: "vet-treatment",
+    text: "Ahora que Rango está en el consultorio, usaré mi primera acción para cubrir sus necesidades de salud. Como está en esta sala, puedo cubrir 2 necesidades de salud con una sola acción, colocando las fichas verdes sobre ellas. En cualquier otra sala solo podría cubrir una."
   }
 ];
 
@@ -111,6 +116,26 @@ const cardHighlights = {
   requirements: document.getElementById("animalRequirementsHighlight")
 };
 
+const staffBackHotspot = document.createElement("button");
+staffBackHotspot.type = "button";
+staffBackHotspot.hidden = true;
+staffBackHotspot.setAttribute("aria-label", "Volver a la presentación anterior");
+staffBackHotspot.title = "Volver";
+Object.assign(staffBackHotspot.style, {
+  position: "absolute",
+  zIndex: "19",
+  border: "0",
+  padding: "0",
+  background: "transparent",
+  cursor: "pointer",
+  touchAction: "manipulation",
+  left: "81.0%",
+  top: "78.6%",
+  width: "8.0%",
+  height: "16.5%"
+});
+stage.appendChild(staffBackHotspot);
+
 const rangoMini = document.createElement("img");
 rangoMini.src = "rangomini.png";
 rangoMini.alt = "Carta mini de Rango";
@@ -131,6 +156,30 @@ Object.assign(rangoMini.style, {
 });
 stage.appendChild(rangoMini);
 
+function createHealthToken() {
+  const token = document.createElement("img");
+  token.src = "FVR.png";
+  token.alt = "Ficha verde de salud";
+  token.draggable = false;
+  token.setAttribute("aria-hidden", "true");
+  Object.assign(token.style, {
+    position: "absolute",
+    zIndex: "20",
+    display: "none",
+    pointerEvents: "none",
+    width: "6.1%",
+    height: "auto",
+    opacity: "0",
+    transform: "scale(0.72)",
+    filter: "drop-shadow(0 5px 8px rgba(0,0,0,.22))"
+  });
+  stage.appendChild(token);
+  return token;
+}
+
+const healthToken1 = createHealthToken();
+const healthToken2 = createHealthToken();
+
 let sceneIndex = 0;
 let currentImage = "";
 let openRoomKey = null;
@@ -138,13 +187,16 @@ let musicStarted = false;
 let interactionLockedUntil = 0;
 let rangoRevealTimer = null;
 let rangoMoveTimer = null;
+let healthTokenTimer1 = null;
+let healthTokenTimer2 = null;
 
 bgMusic.volume = 0.14;
 
 const imagesToPreload = [
   ...scenes.map(scene => scene.image),
   ...Object.values(rooms).map(room => room.image),
-  "rangomini.png"
+  "rangomini.png",
+  "FVR.png"
 ];
 
 [...new Set(imagesToPreload)].forEach(src => {
@@ -174,6 +226,31 @@ function applyAnimalHighlights(scene) {
     const element = cardHighlights[name];
     if (element) element.hidden = false;
   });
+}
+
+function resetDialogueLayout() {
+  dialogueText.style.left = "";
+  dialogueText.style.top = "";
+  dialogueText.style.width = "";
+  dialogueText.style.height = "";
+  dialogueText.style.padding = "";
+  dialogueText.style.fontSize = "";
+  dialogueText.style.lineHeight = "";
+  dialogueText.style.alignItems = "";
+  dialogueText.style.justifyContent = "";
+}
+
+function applyVetTreatmentDialogueLayout() {
+  resetDialogueLayout();
+  dialogueText.style.left = "64.6%";
+  dialogueText.style.top = "13.7%";
+  dialogueText.style.width = "33.6%";
+  dialogueText.style.height = "72.5%";
+  dialogueText.style.padding = "4.2% 3.2% 4.4%";
+  dialogueText.style.fontSize = "clamp(13px, calc(1.35vw + 2px), 28px)";
+  dialogueText.style.lineHeight = "1.18";
+  dialogueText.style.alignItems = "center";
+  dialogueText.style.justifyContent = "center";
 }
 
 function clearRangoAnimation() {
@@ -220,6 +297,83 @@ function animateRangoToVet() {
   interactionLockedUntil = Date.now() + 1700;
 }
 
+function clearHealthTokens() {
+  clearTimeout(healthTokenTimer1);
+  clearTimeout(healthTokenTimer2);
+  healthTokenTimer1 = null;
+  healthTokenTimer2 = null;
+
+  [healthToken1, healthToken2].forEach(token => {
+    token.style.transition = "none";
+    token.style.display = "none";
+    token.style.opacity = "0";
+    token.style.transform = "scale(0.72)";
+  });
+}
+
+function showHealthTokens() {
+  clearHealthTokens();
+
+  healthToken1.style.left = "19.95%";
+  healthToken1.style.top = "52.7%";
+  healthToken2.style.left = "19.95%";
+  healthToken2.style.top = "64.8%";
+
+  healthTokenTimer1 = setTimeout(() => {
+    healthToken1.style.display = "block";
+    healthToken1.style.transition = "opacity 220ms ease, transform 220ms ease";
+    requestAnimationFrame(() => {
+      healthToken1.style.opacity = "1";
+      healthToken1.style.transform = "scale(1)";
+    });
+  }, 260);
+
+  healthTokenTimer2 = setTimeout(() => {
+    healthToken2.style.display = "block";
+    healthToken2.style.transition = "opacity 220ms ease, transform 220ms ease";
+    requestAnimationFrame(() => {
+      healthToken2.style.opacity = "1";
+      healthToken2.style.transform = "scale(1)";
+    });
+  }, 520);
+
+  interactionLockedUntil = Date.now() + 800;
+}
+
+function resetSkipButtonPosition() {
+  skipButton.style.left = "";
+  skipButton.style.top = "";
+  skipButton.style.width = "";
+  skipButton.style.height = "";
+  skipButton.dataset.action = "";
+}
+
+function configureStaffNavigation(scene) {
+  staffBackHotspot.hidden = true;
+  resetSkipButtonPosition();
+
+  if (scene.type === "staff") {
+    previousButton.hidden = true;
+    staffBackHotspot.hidden = false;
+
+    skipButton.hidden = false;
+    skipButton.dataset.action = "next";
+    skipButton.style.left = "89.2%";
+    skipButton.style.top = "78.6%";
+    skipButton.style.width = "9.0%";
+    skipButton.style.height = "16.5%";
+    return;
+  }
+
+  previousButton.hidden = sceneIndex === 0;
+
+  if (Number.isInteger(scene.skipTo)) {
+    skipButton.hidden = false;
+    skipButton.dataset.action = "skip";
+    if (scene.skipClass) skipButton.classList.add(scene.skipClass);
+  }
+}
+
 function updateMusicButton() {
   const muted = bgMusic.muted;
   musicToggle.textContent = muted ? "🔇" : "🔊";
@@ -251,13 +405,16 @@ function renderScene() {
   interactionLockedUntil = 0;
   roomBack.hidden = true;
   roomHotspots.hidden = true;
-  previousButton.hidden = sceneIndex === 0;
   hideAllCardHighlights();
   clearRangoAnimation();
+  clearHealthTokens();
+  staffBackHotspot.hidden = true;
 
   dialogueText.classList.remove("map-dialogue", "animal-dialogue");
+  resetDialogueLayout();
   skipButton.hidden = true;
   skipButton.classList.remove("skip-img1", "skip-img2");
+  resetSkipButtonPosition();
   stage.dataset.mode = scene.type;
 
   let altText = "Escena en la Fundación Corazón Peludito";
@@ -265,12 +422,14 @@ function renderScene() {
   if (scene.type === "staff") altText = "Presentación del personal de la Fundación Corazón Peludito";
   if (scene.type === "animal-card") altText = "Carta de animal de la Fundación Corazón Peludito";
   if (scene.type === "room-demo") altText = "Demostración de cómo mover a Rango al consultorio veterinario";
+  if (scene.type === "vet-treatment") altText = "Rango recibiendo cuidados de salud en el consultorio veterinario";
   setSceneImage(scene.image, altText);
 
   if (scene.type === "start") {
     startPrompt.hidden = false;
     startPrompt.textContent = scene.text;
     dialogueText.hidden = true;
+    previousButton.hidden = true;
     stage.setAttribute("aria-label", "Portada de Adóptame. Toca o presiona Enter para iniciar.");
     return;
   }
@@ -279,17 +438,14 @@ function renderScene() {
   dialogueText.hidden = scene.type === "staff";
   dialogueText.textContent = scene.text || "";
 
-  if (Number.isInteger(scene.skipTo)) {
-    skipButton.hidden = false;
-    if (scene.skipClass) skipButton.classList.add(scene.skipClass);
-  }
+  configureStaffNavigation(scene);
 
   if (scene.type === "room-map") {
     dialogueText.classList.add("map-dialogue");
     roomHotspots.hidden = false;
     stage.setAttribute("aria-label", "Mapa de la Fundación Corazón Peludito. Selecciona uno de los cuartos para conocer su función o usa la flecha naranja para continuar.");
   } else if (scene.type === "staff") {
-    stage.setAttribute("aria-label", "Presentación del personal. Toca o presiona Enter para continuar.");
+    stage.setAttribute("aria-label", "Presentación del personal. Usa las flechas inferiores para avanzar o retroceder.");
   } else if (scene.type === "animal-card") {
     dialogueText.classList.add("animal-dialogue");
     applyAnimalHighlights(scene);
@@ -298,6 +454,10 @@ function renderScene() {
     dialogueText.classList.add("map-dialogue");
     if (scene.animateRango) animateRangoToVet();
     stage.setAttribute("aria-label", "Demostración de cómo mover a Rango al consultorio veterinario. Espera a que termine la animación y luego toca para continuar.");
+  } else if (scene.type === "vet-treatment") {
+    applyVetTreatmentDialogueLayout();
+    showHealthTokens();
+    stage.setAttribute("aria-label", "Rango en el consultorio veterinario. Se colocan dos fichas verdes sobre sus necesidades de salud.");
   } else {
     stage.setAttribute("aria-label", "Diálogo de la historia. Toca o presiona Enter para continuar.");
   }
@@ -349,8 +509,10 @@ function openRoom(roomKey) {
   roomBack.hidden = false;
   previousButton.hidden = true;
   skipButton.hidden = true;
+  staffBackHotspot.hidden = true;
   hideAllCardHighlights();
   clearRangoAnimation();
+  clearHealthTokens();
 
   stage.setAttribute("aria-label", `Información de ${room.name}. Toca la pantalla o el botón Volver para regresar a la fundación.`);
 }
@@ -373,7 +535,18 @@ stage.addEventListener("click", event => {
 
 skipButton.addEventListener("click", event => {
   event.stopPropagation();
+
+  if (skipButton.dataset.action === "next") {
+    advanceScene();
+    return;
+  }
+
   skipCurrentPart();
+});
+
+staffBackHotspot.addEventListener("click", event => {
+  event.stopPropagation();
+  previousScene();
 });
 
 roomHotspots.addEventListener("click", event => {
