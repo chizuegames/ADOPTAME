@@ -359,3 +359,23 @@ button {
     font-size: clamp(11px, calc(1.65vh + 2px), 29px);
   }
 }
+
+/* IMG3 usa un globo alto y estrecho en el centro de la ilustración. */
+.dialogue-text.animal-dialogue {
+  left: 36.2%;
+  top: 12.5%;
+  width: 29.8%;
+  height: 72%;
+  padding: 3.8% 3.1% 4.2%;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: clamp(14px, calc(1.6vw + 2px), 30px);
+  line-height: 1.18;
+}
+
+@media (orientation: portrait) {
+  .dialogue-text.animal-dialogue {
+    font-size: clamp(13px, calc(1.5vh + 2px), 29px);
+  }
+}
