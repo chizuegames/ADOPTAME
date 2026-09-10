@@ -1,6 +1,11 @@
+/* =========================================================
+   GENERAL
+   ========================================================= */
+
 * {
   box-sizing: border-box;
 }
+
 
 html,
 body {
@@ -8,123 +13,332 @@ body {
   min-height: 100%;
   margin: 0;
   overflow: hidden;
-  font-family: "Trebuchet MS", "Arial Rounded MT Bold", Arial, sans-serif;
+
+  font-family:
+    "Trebuchet MS",
+    "Arial Rounded MT Bold",
+    Arial,
+    sans-serif;
+
   background: #f7efe9;
 }
 
+
 body {
   min-height: 100dvh;
+
   user-select: none;
   -webkit-user-select: none;
+
   -webkit-tap-highlight-color: transparent;
 }
+
 
 button {
   font: inherit;
 }
 
+
+
+/* =========================================================
+   APP
+   ========================================================= */
+
 .app {
   width: 100vw;
   height: 100dvh;
+
   display: grid;
   place-items: center;
+
   overflow: hidden;
+
   background: #f7efe9;
 }
 
+
+
 /*
-  El contenedor visible tiene proporción 9:16. Dentro conservamos el lienzo
-  original 16:9 y lo giramos -90°. Así no hay que recalcular textos ni zonas
-  táctiles y, al mismo tiempo, evitamos que el elemento rotado sea recortado.
+  El contenido original es 16:9.
+
+  La aplicación visible es 9:16
+  y gira todo el contenido -90 grados
+  para funcionar mejor en celular.
 */
+
 .stage-shell {
   position: relative;
-  width: min(100vw, calc(100dvh * 9 / 16));
+
+  width:
+    min(
+      100vw,
+      calc(100dvh * 9 / 16)
+    );
+
   aspect-ratio: 9 / 16;
+
   overflow: hidden;
+
   background: #f7efe9;
 }
+
+
+
+/* =========================================================
+   ESCENARIO GIRADO
+   ========================================================= */
 
 .stage {
   position: absolute;
+
   left: 50%;
   top: 50%;
+
   width: 177.7777778%;
+
   aspect-ratio: 16 / 9;
+
   overflow: hidden;
+
   cursor: pointer;
+
   outline: none;
+
   background: #fff;
+
   touch-action: manipulation;
-  transform: translate(-50%, -50%) rotate(-90deg);
-  transform-origin: center center;
+
+  transform:
+    translate(-50%, -50%)
+    rotate(-90deg);
+
+  transform-origin:
+    center center;
 }
+
 
 .stage:focus-visible {
   outline: 4px solid #fff;
   outline-offset: -4px;
 }
 
+
+
+/* =========================================================
+   IMAGEN
+   ========================================================= */
+
 .scene-image {
   position: absolute;
+
   inset: 0;
+
   width: 100%;
   height: 100%;
+
   object-fit: cover;
+
   pointer-events: none;
 }
 
-.stage[data-mode="detail"] .scene-image {
+
+.stage[data-mode="detail"]
+.scene-image {
   object-fit: contain;
+
   background: #fff;
 }
 
+
+
+/* =========================================================
+   TOCA PARA INICIAR
+   ========================================================= */
+
 .start-prompt {
   position: absolute;
+
   left: 50%;
   top: 55%;
-  transform: translateX(-50%);
-  padding: 0.35em 0.85em;
-  border: 3px solid #161616;
-  border-radius: 999px;
-  background: rgba(255, 245, 185, 0.92);
-  color: #171717;
-  font-size: clamp(15px, 2.2vw, 38px);
-  font-weight: 900;
-  letter-spacing: 0.01em;
-  box-shadow: 0 0.18em 0 #111;
-  white-space: nowrap;
-  pointer-events: none;
+
+  transform:
+    translateX(-50%);
+
+  padding:
+    0.35em 0.85em;
+
+  border:
+    3px solid #161616;
+
+  border-radius:
+    999px;
+
+  background:
+    rgba(
+      255,
+      245,
+      185,
+      0.92
+    );
+
+  color:
+    #171717;
+
+  font-size:
+    clamp(
+      15px,
+      2.2vw,
+      38px
+    );
+
+  font-weight:
+    900;
+
+  letter-spacing:
+    0.01em;
+
+  box-shadow:
+    0 0.18em 0 #111;
+
+  white-space:
+    nowrap;
+
+  pointer-events:
+    none;
 }
+
+
+
+/* =========================================================
+   DIÁLOGO NORMAL — IMG1
+   ========================================================= */
 
 .dialogue-text {
   position: absolute;
+
   left: 12.3%;
   top: 11.5%;
+
   width: 52.8%;
   height: 41.5%;
-  padding: 3.2% 4.5% 4.8%;
+
+  padding:
+    3.2%
+    4.5%
+    4.8%;
+
   display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  color: #171717;
-  font-size: clamp(11px, 2vw, 34px);
-  font-weight: 800;
-  line-height: 1.2;
-  text-wrap: balance;
-  pointer-events: none;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  text-align:
+    center;
+
+  color:
+    #171717;
+
+  font-size:
+    clamp(
+      13px,
+      calc(2vw + 2px),
+      36px
+    );
+
+  font-weight:
+    800;
+
+  line-height:
+    1.2;
+
+  text-wrap:
+    balance;
+
+  pointer-events:
+    none;
 }
+
+
+
+/* =========================================================
+   DIÁLOGO IMG2
+   ========================================================= */
 
 .dialogue-text.map-dialogue {
   left: 12%;
   top: 82.2%;
+
   width: 76.5%;
   height: 15.6%;
-  padding: 1% 2.8%;
-  font-size: clamp(10px, 1.55vw, 27px);
-  line-height: 1.15;
+
+  padding:
+    1% 2.8%;
+
+  font-size:
+    clamp(
+      12px,
+      calc(1.55vw + 2px),
+      29px
+    );
+
+  line-height:
+    1.15;
 }
+
+
+
+/* =========================================================
+   DIÁLOGO IMG3
+   ========================================================= */
+
+/*
+  IMG3 tiene un cuadro
+  vertical diferente.
+
+  Este texto ocupa únicamente
+  el globo central.
+*/
+
+.dialogue-text.animal-dialogue {
+  left: 36.1%;
+  top: 11.5%;
+
+  width: 30.1%;
+  height: 73.5%;
+
+  padding:
+    4.2%
+    3.1%
+    4.5%;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  text-align:
+    center;
+
+  font-size:
+    clamp(
+      14px,
+      calc(1.6vw + 2px),
+      30px
+    );
+
+  line-height:
+    1.18;
+}
+
+
+
+/* =========================================================
+   ELEMENTOS OCULTOS
+   ========================================================= */
 
 .start-prompt[hidden],
 .dialogue-text[hidden],
@@ -132,250 +346,785 @@ button {
 .room-back[hidden],
 .skip-hotspot[hidden],
 .music-toggle[hidden],
-.previous-button[hidden] {
-  display: none;
+.previous-button[hidden],
+.card-highlight[hidden] {
+  display: none !important;
 }
 
-/* Controles flotantes que permanecen derechos aunque el contenido esté girado. */
+
+
+/* =========================================================
+   BOTONES FLOTANTES
+   ========================================================= */
+
+/*
+  Estos botones están fuera
+  del escenario girado.
+
+  Por eso permanecen derechos
+  en la pantalla del celular.
+*/
+
 .music-toggle,
 .previous-button {
   position: absolute;
-  z-index: 20;
-  top: max(10px, env(safe-area-inset-top));
-  width: clamp(38px, 11vw, 54px);
-  height: clamp(38px, 11vw, 54px);
+
+  z-index: 30;
+
+  top:
+    max(
+      10px,
+      env(
+        safe-area-inset-top
+      )
+    );
+
+  width:
+    clamp(
+      38px,
+      11vw,
+      54px
+    );
+
+  height:
+    clamp(
+      38px,
+      11vw,
+      54px
+    );
+
   display: grid;
-  place-items: center;
+
+  place-items:
+    center;
+
   padding: 0;
-  border: 3px solid rgba(30, 30, 30, 0.9);
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.92);
-  color: #222;
-  line-height: 1;
-  cursor: pointer;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.22);
-  touch-action: manipulation;
+
+  border:
+    3px solid
+    rgba(
+      30,
+      30,
+      30,
+      0.9
+    );
+
+  border-radius:
+    50%;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.94
+    );
+
+  color:
+    #222;
+
+  line-height:
+    1;
+
+  cursor:
+    pointer;
+
+  box-shadow:
+    0 3px 10px
+    rgba(
+      0,
+      0,
+      0,
+      0.22
+    );
+
+  touch-action:
+    manipulation;
 }
+
+
+
+/* Música */
 
 .music-toggle {
-  left: max(10px, env(safe-area-inset-left));
-  font-size: clamp(18px, 5.4vw, 27px);
+  left:
+    max(
+      10px,
+      env(
+        safe-area-inset-left
+      )
+    );
+
+  font-size:
+    clamp(
+      18px,
+      5.4vw,
+      27px
+    );
 }
 
+
+
+/* Volver */
+
 .previous-button {
-  right: max(10px, env(safe-area-inset-right));
-  font-size: clamp(24px, 7vw, 34px);
-  font-weight: 900;
+  right:
+    max(
+      10px,
+      env(
+        safe-area-inset-right
+      )
+    );
+
+  font-size:
+    clamp(
+      24px,
+      7vw,
+      34px
+    );
+
+  font-weight:
+    900;
 }
+
+
 
 .music-toggle:active,
 .previous-button:active {
-  transform: scale(0.94);
+  transform:
+    scale(0.94);
 }
 
-/* La flecha naranja ya forma parte de la imagen. Estos botones son zonas invisibles que la vuelven táctil. */
+
+
+/* =========================================================
+   FLECHAS NARANJAS
+   ========================================================= */
+
+/*
+  La flecha está dibujada
+  dentro de la propia imagen.
+
+  Esta zona invisible hace
+  que la flecha sea táctil.
+*/
+
 .skip-hotspot {
   position: absolute;
-  z-index: 8;
+
+  z-index: 15;
+
   border: 0;
+
   padding: 0;
-  background: transparent;
-  cursor: pointer;
-  touch-action: manipulation;
+
+  background:
+    transparent;
+
+  cursor:
+    pointer;
+
+  touch-action:
+    manipulation;
 }
+
 
 .skip-hotspot:focus-visible {
-  outline: 4px solid rgba(255, 255, 255, 0.95);
-  outline-offset: -4px;
-  border-radius: 8px;
+  outline:
+    4px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.95
+    );
+
+  outline-offset:
+    -4px;
+
+  border-radius:
+    8px;
 }
 
-/* Flecha de IMG1: esquina inferior izquierda de la imagen horizontal original. */
+
+
+/* IMG1 */
+
 .skip-hotspot.skip-img1 {
   left: 2.4%;
   top: 78.2%;
+
   width: 10.2%;
   height: 15.7%;
 }
 
-/* Flecha de IMG2: esquina superior derecha de la imagen horizontal original. */
+
+
+/* IMG2 */
+
 .skip-hotspot.skip-img2 {
   left: 87.4%;
   top: 4.2%;
+
   width: 10.2%;
   height: 15.8%;
 }
 
+
+
+/* =========================================================
+   MAPA DE CUARTOS
+   ========================================================= */
+
 .room-hotspots {
   position: absolute;
+
   inset: 0;
-  pointer-events: none;
+
+  pointer-events:
+    none;
 }
+
 
 .room-hotspot {
   position: absolute;
-  z-index: 3;
+
+  z-index: 10;
+
   border: 0;
-  border-radius: 1.6%;
-  background: transparent;
-  cursor: pointer;
-  pointer-events: auto;
-  touch-action: manipulation;
+
+  border-radius:
+    1.6%;
+
+  background:
+    transparent;
+
+  cursor:
+    pointer;
+
+  pointer-events:
+    auto;
+
+  touch-action:
+    manipulation;
 }
+
 
 .room-hotspot::after {
   content: "";
+
   position: absolute;
+
   inset: 0;
-  border-radius: inherit;
-  box-shadow: inset 0 0 0 0 rgba(255, 255, 255, 0);
-  transition: box-shadow 120ms ease, background 120ms ease;
+
+  border-radius:
+    inherit;
+
+  box-shadow:
+    inset
+    0 0 0 0
+    rgba(
+      255,
+      255,
+      255,
+      0
+    );
+
+  transition:
+    box-shadow
+    120ms ease,
+    background
+    120ms ease;
 }
+
 
 .room-hotspot:hover::after,
 .room-hotspot:focus-visible::after {
-  background: rgba(255, 255, 255, 0.07);
-  box-shadow: inset 0 0 0 4px rgba(255, 255, 255, 0.85);
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.07
+    );
+
+  box-shadow:
+    inset
+    0 0 0 4px
+    rgba(
+      255,
+      255,
+      255,
+      0.85
+    );
 }
+
 
 .room-hotspot:active::after {
-  background: rgba(255, 255, 255, 0.18);
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.18
+    );
 }
 
+
 .room-hotspot:focus-visible {
-  outline: none;
+  outline:
+    none;
 }
+
+
+
+/* =========================================================
+   POSICIONES DE LOS CUARTOS EN IMG2
+   ========================================================= */
+
+/* Oficina */
 
 .room-office {
   left: 27.3%;
   top: 20.9%;
+
   width: 20.2%;
   height: 23.5%;
 }
+
+
+/* Sala de receso */
 
 .room-break {
   left: 48.9%;
   top: 20.9%;
+
   width: 20.2%;
   height: 23.5%;
 }
 
+
+/* Recepción */
+
 .room-reception {
   left: 5.8%;
   top: 52.7%;
+
   width: 20.3%;
   height: 23.7%;
 }
+
+
+/* Estimulación */
 
 .room-stimulation {
   left: 27.3%;
   top: 52.7%;
+
   width: 20.2%;
   height: 23.7%;
 }
+
+
+/* Descanso */
 
 .room-rest {
   left: 48.9%;
   top: 52.7%;
+
   width: 20.2%;
   height: 23.7%;
 }
 
+
+/* Veterinario */
+
 .room-vet {
   left: 70.2%;
   top: 52.7%;
+
   width: 20.3%;
   height: 23.7%;
 }
 
+
+
+/* =========================================================
+   VOLVER DESDE UNA SALA
+   ========================================================= */
+
 .room-back {
   position: absolute;
-  z-index: 5;
+
+  z-index: 20;
+
   left: 2.2%;
   top: 3.2%;
-  padding: 0.38em 0.72em;
-  border: 3px solid rgba(35, 35, 35, 0.9);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.9);
-  color: #222;
-  font-size: clamp(11px, 1.25vw, 21px);
-  font-weight: 900;
-  cursor: pointer;
-  box-shadow: 0 0.14em 0.08em rgba(0, 0, 0, 0.2);
-  touch-action: manipulation;
+
+  padding:
+    0.38em
+    0.72em;
+
+  border:
+    3px solid
+    rgba(
+      35,
+      35,
+      35,
+      0.9
+    );
+
+  border-radius:
+    999px;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.92
+    );
+
+  color:
+    #222;
+
+  font-size:
+    clamp(
+      11px,
+      1.25vw,
+      21px
+    );
+
+  font-weight:
+    900;
+
+  cursor:
+    pointer;
+
+  box-shadow:
+    0 0.14em
+    0.08em
+    rgba(
+      0,
+      0,
+      0,
+      0.2
+    );
+
+  touch-action:
+    manipulation;
 }
+
 
 .room-back:hover,
 .room-back:focus-visible {
-  background: #fff;
-  outline: 3px solid rgba(255, 255, 255, 0.75);
-  outline-offset: 2px;
+  background:
+    #fff;
+
+  outline:
+    3px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.75
+    );
+
+  outline-offset:
+    2px;
 }
 
-@media (orientation: portrait) {
-  .dialogue-text {
-    font-size: clamp(11px, 2.15vh, 34px);
+
+
+/* =========================================================
+   RESALTADOS DE IMG3
+   ========================================================= */
+
+/*
+  Los resaltados solo aparecen
+  en el diálogo que los necesita.
+*/
+
+.card-highlight {
+  position: absolute;
+
+  z-index: 12;
+
+  pointer-events:
+    none;
+
+  border:
+    5px solid
+    #ff8a22;
+
+  border-radius:
+    18px;
+
+  background:
+    rgba(
+      255,
+      138,
+      34,
+      0.14
+    );
+
+  box-shadow:
+    0 0 0 3px
+    rgba(
+      255,
+      255,
+      255,
+      0.8
+    ),
+    0 0 22px
+    rgba(
+      255,
+      138,
+      34,
+      0.95
+    );
+
+  animation:
+    cardHighlightPulse
+    1.15s
+    ease-in-out
+    infinite;
+}
+
+
+
+/*
+  RANGO
+
+  El nombre se encuentra
+  en la parte superior
+  de la carta.
+*/
+
+.card-highlight-name {
+  left: 12.3%;
+  top: 12.7%;
+
+  width: 12.8%;
+  height: 9.5%;
+}
+
+
+
+/*
+  FLOJO
+
+  Personalidad ubicada
+  debajo del nombre.
+*/
+
+.card-highlight-trait {
+  left: 15%;
+  top: 22.3%;
+
+  width: 8.2%;
+  height: 7.8%;
+}
+
+
+
+/*
+  NECESIDADES
+
+  Columna lateral izquierda:
+  estimulación,
+  afecto,
+  salud,
+  salud.
+*/
+
+.card-highlight-needs {
+  left: 6.6%;
+  top: 25%;
+
+  width: 6.7%;
+  height: 47.5%;
+
+  border-radius:
+    999px;
+}
+
+
+
+/*
+  REQUISITOS DE TENENCIA
+
+  Dinero,
+  espacio
+  y tiempo.
+*/
+
+.card-highlight-requirements {
+  left: 5.8%;
+  top: 73.4%;
+
+  width: 26.5%;
+  height: 13.5%;
+}
+
+
+
+/* Animación del resaltado */
+
+@keyframes cardHighlightPulse {
+
+  0%,
+  100% {
+
+    opacity: 0.78;
+
+    box-shadow:
+      0 0 0 3px
+      rgba(
+        255,
+        255,
+        255,
+        0.7
+      ),
+      0 0 15px
+      rgba(
+        255,
+        138,
+        34,
+        0.7
+      );
+
   }
+
+
+  50% {
+
+    opacity: 1;
+
+    box-shadow:
+      0 0 0 4px
+      rgba(
+        255,
+        255,
+        255,
+        0.95
+      ),
+      0 0 30px
+      rgba(
+        255,
+        138,
+        34,
+        1
+      );
+
+  }
+
+}
+
+
+
+/* =========================================================
+   CELULAR VERTICAL
+   ========================================================= */
+
+@media
+(orientation: portrait) {
+
+  .dialogue-text {
+
+    font-size:
+      clamp(
+        13px,
+        calc(
+          2.15vh + 2px
+        ),
+        36px
+      );
+
+  }
+
 
   .dialogue-text.map-dialogue {
-    font-size: clamp(9px, 1.65vh, 27px);
+
+    font-size:
+      clamp(
+        11px,
+        calc(
+          1.65vh + 2px
+        ),
+        29px
+      );
+
   }
+
+
+  .dialogue-text.animal-dialogue {
+
+    font-size:
+      clamp(
+        13px,
+        calc(
+          1.5vh + 2px
+        ),
+        29px
+      );
+
+  }
+
 
   .start-prompt {
-    font-size: clamp(14px, 2.5vh, 38px);
+
+    font-size:
+      clamp(
+        14px,
+        2.5vh,
+        38px
+      );
+
   }
+
 
   .room-back {
-    font-size: clamp(10px, 1.45vh, 21px);
+
+    font-size:
+      clamp(
+        10px,
+        1.45vh,
+        21px
+      );
+
   }
+
 }
 
-@media (prefers-reduced-motion: reduce) {
+
+
+/* =========================================================
+   ACCESIBILIDAD
+   ========================================================= */
+
+@media
+(prefers-reduced-motion: reduce) {
+
   .room-hotspot::after {
-    transition: none;
+    transition:
+      none;
   }
+
 
   .music-toggle:active,
   .previous-button:active {
-    transform: none;
-  }
-}
-
-/* Aumento ligero de aproximadamente 2 px en los textos narrativos. */
-.dialogue-text {
-  font-size: clamp(13px, calc(2vw + 2px), 36px);
-}
-
-.dialogue-text.map-dialogue {
-  font-size: clamp(12px, calc(1.55vw + 2px), 29px);
-}
-
-@media (orientation: portrait) {
-  .dialogue-text {
-    font-size: clamp(13px, calc(2.15vh + 2px), 36px);
+    transform:
+      none;
   }
 
-  .dialogue-text.map-dialogue {
-    font-size: clamp(11px, calc(1.65vh + 2px), 29px);
-  }
-}
 
-/* IMG3 usa un globo alto y estrecho en el centro de la ilustración. */
-.dialogue-text.animal-dialogue {
-  left: 36.2%;
-  top: 12.5%;
-  width: 29.8%;
-  height: 72%;
-  padding: 3.8% 3.1% 4.2%;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  font-size: clamp(14px, calc(1.6vw + 2px), 30px);
-  line-height: 1.18;
-}
+  .card-highlight {
+    animation:
+      none;
 
-@media (orientation: portrait) {
-  .dialogue-text.animal-dialogue {
-    font-size: clamp(13px, calc(1.5vh + 2px), 29px);
+    opacity:
+      1;
   }
+
 }
