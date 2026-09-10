@@ -63,6 +63,24 @@ const scenes = [
     image: "IMG3.png",
     type: "animal-card",
     text: "Acá tenemos a Rango, la iguana. Como pueden ver, está en blanco y negro, y eso significa que necesita nuestra ayuda."
+  },
+  {
+    image: "IMG3.png",
+    type: "animal-card",
+    text: "En la parte superior veremos el nombre del animal y, debajo, su personalidad. En este caso, Rango es flojo. Esto será importante, porque podremos encontrarle un adoptante que comparta su personalidad.",
+    highlights: ["name", "trait"]
+  },
+  {
+    image: "IMG3.png",
+    type: "animal-card",
+    text: "Ahora, si miramos la parte lateral izquierda, veremos las necesidades del animal. En este caso, Rango necesita estimulación, afecto y dos cuidados de salud, representados por los íconos verdes.",
+    highlights: ["needs"]
+  },
+  {
+    image: "IMG3.png",
+    type: "animal-card",
+    text: "En la parte inferior veremos los requisitos de tenencia: dinero, espacio y tiempo. El adoptante deberá tener esa cantidad o más para poder adoptar al animal.",
+    highlights: ["requirements"]
   }
 ];
 
@@ -97,6 +115,12 @@ const stage = document.getElementById("stage");
 const sceneImage = document.getElementById("sceneImage");
 const startPrompt = document.getElementById("startPrompt");
 const dialogueText = document.getElementById("dialogueText");
+
+const animalNameHighlight = document.getElementById("animalNameHighlight");
+const animalTraitHighlight = document.getElementById("animalTraitHighlight");
+const animalNeedsHighlight = document.getElementById("animalNeedsHighlight");
+const animalRequirementsHighlight = document.getElementById("animalRequirementsHighlight");
+
 const roomHotspots = document.getElementById("roomHotspots");
 const roomBack = document.getElementById("roomBack");
 const skipButton = document.getElementById("skipButton");
@@ -111,7 +135,7 @@ let musicStarted = false;
 
 bgMusic.volume = 0.14;
 
-// Precarga todas las imágenes para que al abrir una escena el cambio sea inmediato.
+// Precarga de imágenes
 const imagesToPreload = [
   ...scenes.map(scene => scene.image),
   ...Object.values(rooms).map(room => room.image)
@@ -123,7 +147,6 @@ const imagesToPreload = [
 });
 
 function setSceneImage(src, alt) {
-  // Evita volver a cargar la misma imagen entre diálogos y elimina el parpadeo.
   if (src !== currentImage) {
     sceneImage.src = src;
     currentImage = src;
@@ -150,10 +173,38 @@ function startBackgroundMusic() {
   const playPromise = bgMusic.play();
   if (playPromise && typeof playPromise.catch === "function") {
     playPromise.catch(() => {
-      // Si el navegador bloquea el audio, el botón queda disponible para iniciarlo manualmente.
       bgMusic.muted = true;
       updateMusicButton();
     });
+  }
+}
+
+function hideAllCardHighlights() {
+  animalNameHighlight.hidden = true;
+  animalTraitHighlight.hidden = true;
+  animalNeedsHighlight.hidden = true;
+  animalRequirementsHighlight.hidden = true;
+}
+
+function applyAnimalHighlights(scene) {
+  hideAllCardHighlights();
+
+  if (!scene.highlights) return;
+
+  if (scene.highlights.includes("name")) {
+    animalNameHighlight.hidden = false;
+  }
+
+  if (scene.highlights.includes("trait")) {
+    animalTraitHighlight.hidden = false;
+  }
+
+  if (scene.highlights.includes("needs")) {
+    animalNeedsHighlight.hidden = false;
+  }
+
+  if (scene.highlights.includes("requirements")) {
+    animalRequirementsHighlight.hidden = false;
   }
 }
 
@@ -164,7 +215,10 @@ function renderScene() {
   roomBack.hidden = true;
   roomHotspots.hidden = true;
   previousButton.hidden = sceneIndex === 0;
+
   dialogueText.classList.remove("map-dialogue", "animal-dialogue");
+  hideAllCardHighlights();
+
   stage.dataset.mode = scene.type;
 
   skipButton.hidden = true;
@@ -177,7 +231,7 @@ function renderScene() {
       : scene.type === "staff"
         ? "Presentación del personal de la Fundación Corazón Peludito"
         : scene.type === "animal-card"
-          ? "Carta de Rango, la iguana"
+          ? "Carta de animal de la Fundación Corazón Peludito"
           : "Escena en la Fundación Corazón Peludito"
   );
 
@@ -214,7 +268,8 @@ function renderScene() {
     stage.setAttribute("aria-label", "Presentación del personal. Toca o presiona Enter para continuar.");
   } else if (scene.type === "animal-card") {
     dialogueText.classList.add("animal-dialogue");
-    stage.setAttribute("aria-label", "Carta de Rango, la iguana. Toca o presiona Enter para continuar.");
+    applyAnimalHighlights(scene);
+    stage.setAttribute("aria-label", "Carta de animal. Toca o presiona Enter para continuar.");
   } else {
     stage.setAttribute("aria-label", "Diálogo de la historia. Toca o presiona Enter para continuar.");
   }
@@ -227,7 +282,6 @@ function advanceScene() {
     startBackgroundMusic();
   }
 
-  // El mapa queda abierto para explorar sus cuartos; se continúa con la flecha naranja.
   if (scene.type === "room-map") return;
 
   sceneIndex = Math.min(sceneIndex + 1, scenes.length - 1);
@@ -268,6 +322,7 @@ function openRoom(roomKey) {
   roomBack.hidden = false;
   previousButton.hidden = true;
   skipButton.hidden = true;
+  hideAllCardHighlights();
 
   stage.setAttribute(
     "aria-label",
@@ -281,7 +336,6 @@ function returnToRoomMap() {
 }
 
 stage.addEventListener("click", event => {
-  // Los botones gestionan su propio clic.
   if (event.target.closest("button")) return;
 
   if (openRoomKey) {
