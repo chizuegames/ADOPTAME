@@ -1,9 +1,5 @@
 const scenes = [
-  {
-    image: "IMGI.png",
-    type: "start",
-    text: "Toca para iniciar"
-  },
+  { image: "IMGI.png", type: "start", text: "Toca para iniciar" },
   {
     image: "IMG1.png",
     type: "dialogue",
@@ -85,7 +81,14 @@ const scenes = [
   {
     image: "IMGRV.png",
     type: "vet-treatment",
-    text: "Ahora que Rango está en el consultorio, usaré mi primera acción para cubrir sus necesidades de salud. Como está en esta sala, puedo cubrir 2 necesidades de salud con una sola acción, colocando las fichas verdes sobre ellas. En cualquier otra sala solo podría cubrir una."
+    text: "Ahora que Rango está en el consultorio, usaré mi primera acción para cubrir sus necesidades de salud. Como está en esta sala, puedo cubrir 2 necesidades de salud con una sola acción, colocando las fichas verdes sobre ellas. En cualquier otra sala solo podría cubrir una.",
+    treatmentStep: "health"
+  },
+  {
+    image: "IMGRV.png",
+    type: "vet-treatment",
+    text: "Todavía me queda una acción, así que voy a aprovecharla para cubrir una necesidad de afecto. De esta forma, el siguiente jugador solo tendrá que cubrir una más y Rango quedará listo para ser adoptado.",
+    treatmentStep: "affection"
   }
 ];
 
@@ -136,59 +139,38 @@ Object.assign(staffBackHotspot.style, {
 });
 stage.appendChild(staffBackHotspot);
 
-const rangoMini = document.createElement("img");
-rangoMini.src = "rangomini.png";
-rangoMini.alt = "Carta mini de Rango";
-rangoMini.draggable = false;
-rangoMini.setAttribute("aria-hidden", "true");
-Object.assign(rangoMini.style, {
-  position: "absolute",
-  zIndex: "18",
-  display: "none",
-  pointerEvents: "none",
-  width: "11.2%",
-  height: "auto",
-  left: "4.5%",
-  top: "70%",
-  opacity: "0",
-  transform: "scale(0.85)",
-  filter: "drop-shadow(0 8px 12px rgba(0,0,0,.28))"
-});
-stage.appendChild(rangoMini);
-
-function createHealthToken() {
-  const token = document.createElement("img");
-  token.src = "FVR.png";
-  token.alt = "Ficha verde de salud";
-  token.draggable = false;
-  token.setAttribute("aria-hidden", "true");
-  Object.assign(token.style, {
+function createAnimatedImage(src, alt, width = "6.1%") {
+  const image = document.createElement("img");
+  image.src = src;
+  image.alt = alt;
+  image.draggable = false;
+  image.setAttribute("aria-hidden", "true");
+  Object.assign(image.style, {
     position: "absolute",
     zIndex: "20",
     display: "none",
     pointerEvents: "none",
-    width: "6.1%",
+    width,
     height: "auto",
     opacity: "0",
     transform: "scale(0.72)",
     filter: "drop-shadow(0 5px 8px rgba(0,0,0,.22))"
   });
-  stage.appendChild(token);
-  return token;
+  stage.appendChild(image);
+  return image;
 }
 
-const healthToken1 = createHealthToken();
-const healthToken2 = createHealthToken();
+const rangoMini = createAnimatedImage("rangomini.png", "Carta mini de Rango", "11.2%");
+const healthToken1 = createAnimatedImage("FVR.png", "Ficha verde de salud");
+const healthToken2 = createAnimatedImage("FVR.png", "Ficha verde de salud");
+const affectionToken = createAnimatedImage("FFC.png", "Ficha fucsia de afecto");
 
 let sceneIndex = 0;
 let currentImage = "";
 let openRoomKey = null;
 let musicStarted = false;
 let interactionLockedUntil = 0;
-let rangoRevealTimer = null;
-let rangoMoveTimer = null;
-let healthTokenTimer1 = null;
-let healthTokenTimer2 = null;
+let animationTimers = [];
 
 bgMusic.volume = 0.14;
 
@@ -196,7 +178,8 @@ const imagesToPreload = [
   ...scenes.map(scene => scene.image),
   ...Object.values(rooms).map(room => room.image),
   "rangomini.png",
-  "FVR.png"
+  "FVR.png",
+  "FFC.png"
 ];
 
 [...new Set(imagesToPreload)].forEach(src => {
@@ -253,91 +236,134 @@ function applyVetTreatmentDialogueLayout() {
   dialogueText.style.justifyContent = "center";
 }
 
-function clearRangoAnimation() {
-  clearTimeout(rangoRevealTimer);
-  clearTimeout(rangoMoveTimer);
-  rangoRevealTimer = null;
-  rangoMoveTimer = null;
-  rangoMini.style.transition = "none";
-  rangoMini.style.display = "none";
-  rangoMini.style.opacity = "0";
+function addTimer(delay, callback) {
+  const timer = setTimeout(callback, delay);
+  animationTimers.push(timer);
+}
+
+function clearAnimationTimers() {
+  animationTimers.forEach(timer => clearTimeout(timer));
+  animationTimers = [];
+}
+
+function hideAnimatedImage(image) {
+  image.style.transition = "none";
+  image.style.display = "none";
+  image.style.opacity = "0";
+  image.style.transform = "scale(0.72)";
+}
+
+function clearStageAnimations() {
+  clearAnimationTimers();
+  [rangoMini, healthToken1, healthToken2, affectionToken].forEach(hideAnimatedImage);
+}
+
+function placeAnimatedImage(image, left, top, width, opacity = "1", scale = "1") {
+  image.style.left = left;
+  image.style.top = top;
+  image.style.width = width;
+  image.style.opacity = opacity;
+  image.style.transform = `scale(${scale})`;
+}
+
+function animateImageTo(image, { delay, startLeft, startTop, endLeft, endTop, width = "6.1%", duration = 900 }) {
+  image.style.display = "block";
+  image.style.transition = "none";
+  placeAnimatedImage(image, startLeft, startTop, width, "0", "0.72");
+
+  addTimer(delay, () => {
+    image.style.transition = "opacity 180ms ease, transform 180ms ease";
+    image.style.opacity = "1";
+    image.style.transform = "scale(1)";
+  });
+
+  addTimer(delay + 260, () => {
+    image.style.transition = [
+      `left ${duration}ms cubic-bezier(0.22, 1, 0.36, 1)`,
+      `top ${duration}ms cubic-bezier(0.22, 1, 0.36, 1)`,
+      `transform ${duration}ms cubic-bezier(0.22, 1, 0.36, 1)`
+    ].join(", ");
+    placeAnimatedImage(image, endLeft, endTop, width, "1", "1");
+  });
 }
 
 function animateRangoToVet() {
-  clearRangoAnimation();
-
+  clearStageAnimations();
   rangoMini.style.display = "block";
   rangoMini.style.transition = "none";
-  rangoMini.style.left = "4.5%";
-  rangoMini.style.top = "70%";
-  rangoMini.style.width = "11.2%";
-  rangoMini.style.opacity = "0";
-  rangoMini.style.transform = "scale(0.85)";
+  placeAnimatedImage(rangoMini, "4.5%", "70%", "11.2%", "0", "0.85");
 
-  rangoRevealTimer = setTimeout(() => {
+  addTimer(80, () => {
     rangoMini.style.transition = "opacity 180ms ease, transform 180ms ease";
     rangoMini.style.opacity = "1";
     rangoMini.style.transform = "scale(1)";
-  }, 80);
+  });
 
-  rangoMoveTimer = setTimeout(() => {
+  addTimer(420, () => {
     rangoMini.style.transition = [
       "left 1200ms cubic-bezier(0.22, 1, 0.36, 1)",
       "top 1200ms cubic-bezier(0.22, 1, 0.36, 1)",
       "width 1200ms cubic-bezier(0.22, 1, 0.36, 1)",
       "transform 1200ms cubic-bezier(0.22, 1, 0.36, 1)"
     ].join(", ");
-
-    rangoMini.style.left = "75.2%";
-    rangoMini.style.top = "52.4%";
-    rangoMini.style.width = "10.8%";
-    rangoMini.style.transform = "scale(1)";
-  }, 420);
+    placeAnimatedImage(rangoMini, "75.2%", "52.4%", "10.8%", "1", "1");
+  });
 
   interactionLockedUntil = Date.now() + 1700;
 }
 
-function clearHealthTokens() {
-  clearTimeout(healthTokenTimer1);
-  clearTimeout(healthTokenTimer2);
-  healthTokenTimer1 = null;
-  healthTokenTimer2 = null;
-
-  [healthToken1, healthToken2].forEach(token => {
+function showHealthTokensPlaced() {
+  [
+    [healthToken1, "19.95%", "52.7%"],
+    [healthToken2, "19.95%", "64.8%"]
+  ].forEach(([token, left, top]) => {
+    token.style.display = "block";
     token.style.transition = "none";
-    token.style.display = "none";
-    token.style.opacity = "0";
-    token.style.transform = "scale(0.72)";
+    placeAnimatedImage(token, left, top, "6.1%", "1", "1");
   });
 }
 
-function showHealthTokens() {
-  clearHealthTokens();
+function animateHealthTokens() {
+  clearStageAnimations();
 
-  healthToken1.style.left = "19.95%";
-  healthToken1.style.top = "52.7%";
-  healthToken2.style.left = "19.95%";
-  healthToken2.style.top = "64.8%";
+  animateImageTo(healthToken1, {
+    delay: 180,
+    startLeft: "4.5%",
+    startTop: "79%",
+    endLeft: "19.95%",
+    endTop: "52.7%",
+    width: "6.1%",
+    duration: 820
+  });
 
-  healthTokenTimer1 = setTimeout(() => {
-    healthToken1.style.display = "block";
-    healthToken1.style.transition = "opacity 220ms ease, transform 220ms ease";
-    requestAnimationFrame(() => {
-      healthToken1.style.opacity = "1";
-      healthToken1.style.transform = "scale(1)";
-    });
-  }, 260);
+  animateImageTo(healthToken2, {
+    delay: 520,
+    startLeft: "4.5%",
+    startTop: "79%",
+    endLeft: "19.95%",
+    endTop: "64.8%",
+    width: "6.1%",
+    duration: 820
+  });
 
-  healthTokenTimer2 = setTimeout(() => {
-    healthToken2.style.display = "block";
-    healthToken2.style.transition = "opacity 220ms ease, transform 220ms ease";
-    requestAnimationFrame(() => {
-      healthToken2.style.opacity = "1";
-      healthToken2.style.transform = "scale(1)";
-    });
-  }, 520);
+  interactionLockedUntil = Date.now() + 1750;
+}
 
-  interactionLockedUntil = Date.now() + 800;
+function animateAffectionToken() {
+  clearStageAnimations();
+  showHealthTokensPlaced();
+
+  animateImageTo(affectionToken, {
+    delay: 220,
+    startLeft: "4.5%",
+    startTop: "79%",
+    endLeft: "19.95%",
+    endTop: "40.5%",
+    width: "6.1%",
+    duration: 850
+  });
+
+  interactionLockedUntil = Date.now() + 1400;
 }
 
 function resetSkipButtonPosition() {
@@ -406,8 +432,7 @@ function renderScene() {
   roomBack.hidden = true;
   roomHotspots.hidden = true;
   hideAllCardHighlights();
-  clearRangoAnimation();
-  clearHealthTokens();
+  clearStageAnimations();
   staffBackHotspot.hidden = true;
 
   dialogueText.classList.remove("map-dialogue", "animal-dialogue");
@@ -422,7 +447,7 @@ function renderScene() {
   if (scene.type === "staff") altText = "Presentación del personal de la Fundación Corazón Peludito";
   if (scene.type === "animal-card") altText = "Carta de animal de la Fundación Corazón Peludito";
   if (scene.type === "room-demo") altText = "Demostración de cómo mover a Rango al consultorio veterinario";
-  if (scene.type === "vet-treatment") altText = "Rango recibiendo cuidados de salud en el consultorio veterinario";
+  if (scene.type === "vet-treatment") altText = "Rango recibiendo cuidados en el consultorio veterinario";
   setSceneImage(scene.image, altText);
 
   if (scene.type === "start") {
@@ -456,8 +481,9 @@ function renderScene() {
     stage.setAttribute("aria-label", "Demostración de cómo mover a Rango al consultorio veterinario. Espera a que termine la animación y luego toca para continuar.");
   } else if (scene.type === "vet-treatment") {
     applyVetTreatmentDialogueLayout();
-    showHealthTokens();
-    stage.setAttribute("aria-label", "Rango en el consultorio veterinario. Se colocan dos fichas verdes sobre sus necesidades de salud.");
+    if (scene.treatmentStep === "health") animateHealthTokens();
+    if (scene.treatmentStep === "affection") animateAffectionToken();
+    stage.setAttribute("aria-label", "Rango en el consultorio veterinario. Se muestran las fichas que cubren sus necesidades.");
   } else {
     stage.setAttribute("aria-label", "Diálogo de la historia. Toca o presiona Enter para continuar.");
   }
@@ -511,8 +537,7 @@ function openRoom(roomKey) {
   skipButton.hidden = true;
   staffBackHotspot.hidden = true;
   hideAllCardHighlights();
-  clearRangoAnimation();
-  clearHealthTokens();
+  clearStageAnimations();
 
   stage.setAttribute("aria-label", `Información de ${room.name}. Toca la pantalla o el botón Volver para regresar a la fundación.`);
 }
