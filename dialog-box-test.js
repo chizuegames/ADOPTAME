@@ -7,6 +7,9 @@
  * queda intacto. Desde las escenas practice-board usamos RE.png como marco
  * visual del diálogo. El texto se coloca encima de su zona blanca y tanto
  * marco como texto desaparecen antes de iniciar las animaciones.
+ *
+ * IMPORTANTE: RE.png conserva siempre su proporción original. No se estira
+ * horizontal ni verticalmente. El área de texto es una capa independiente.
  */
 
 const practiceSpeakerBox = document.createElement("img");
@@ -18,11 +21,11 @@ Object.assign(practiceSpeakerBox.style, {
   position: "absolute",
   zIndex: "44",
   display: "none",
-  left: "2.0%",
-  top: "66.0%",
-  width: "92.0%",
-  height: "28.0%",
-  objectFit: "fill",
+  left: "3.0%",
+  top: "67.0%",
+  width: "74.0%",
+  height: "auto",
+  objectFit: "contain",
   opacity: "1",
   transform: "none",
   transformOrigin: "center center",
@@ -61,20 +64,20 @@ function hidePracticeSpeakerBox(immediate = false) {
 }
 
 /*
- * Reemplaza únicamente el layout de los diálogos de practice-board.
- * El cuadro gráfico ya contiene fondo, borde y retrato. Para celular lo
- * alargamos horizontalmente, aprovechando casi todo el ancho disponible,
- * sin hacerlo más alto de lo necesario.
+ * El texto es una capa independiente colocada sobre la zona blanca marcada
+ * en la referencia. Así podemos aprovechar casi todo el espacio útil sin
+ * deformar la ilustración del cuadro de diálogo.
  */
 applyMobilePracticeDialogueLayout = function () {
   dialogueText.style.zIndex = "45";
-  dialogueText.style.left = "21.2%";
-  dialogueText.style.top = "68.2%";
-  dialogueText.style.width = "66.5%";
-  dialogueText.style.height = "20.8%";
-  dialogueText.style.padding = "1.3% 2.0%";
-  dialogueText.style.fontSize = "clamp(16px, calc(1.28vw + 3px), 29px)";
-  dialogueText.style.lineHeight = "1.17";
+  dialogueText.style.left = "19.6%";
+  dialogueText.style.top = "69.1%";
+  dialogueText.style.width = "55.0%";
+  dialogueText.style.height = "23.8%";
+  dialogueText.style.padding = "1.1% 1.6%";
+  dialogueText.style.boxSizing = "border-box";
+  dialogueText.style.fontSize = "clamp(15px, calc(1.18vw + 3px), 27px)";
+  dialogueText.style.lineHeight = "1.15";
   dialogueText.style.alignItems = "center";
   dialogueText.style.justifyContent = "center";
   dialogueText.style.background = "transparent";
@@ -84,6 +87,8 @@ applyMobilePracticeDialogueLayout = function () {
   dialogueText.style.boxShadow = "none";
   dialogueText.style.textAlign = "center";
   dialogueText.style.overflow = "hidden";
+  dialogueText.style.overflowWrap = "break-word";
+  dialogueText.style.wordBreak = "normal";
   dialogueText.style.opacity = "1";
   dialogueText.style.transform = "none";
   dialogueText.style.transition = "none";
