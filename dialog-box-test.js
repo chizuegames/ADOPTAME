@@ -18,10 +18,11 @@ Object.assign(practiceSpeakerBox.style, {
   position: "absolute",
   zIndex: "44",
   display: "none",
-  left: "4.0%",
+  left: "2.0%",
   top: "66.0%",
-  width: "74.0%",
-  height: "auto",
+  width: "92.0%",
+  height: "28.0%",
+  objectFit: "fill",
   opacity: "1",
   transform: "none",
   transformOrigin: "center center",
@@ -61,14 +62,15 @@ function hidePracticeSpeakerBox(immediate = false) {
 
 /*
  * Reemplaza únicamente el layout de los diálogos de practice-board.
- * El cuadro gráfico ya contiene fondo, borde y retrato, así que el div del
- * texto queda transparente y ocupa solo la zona blanca a la derecha.
+ * El cuadro gráfico ya contiene fondo, borde y retrato. Para celular lo
+ * alargamos horizontalmente, aprovechando casi todo el ancho disponible,
+ * sin hacerlo más alto de lo necesario.
  */
 applyMobilePracticeDialogueLayout = function () {
   dialogueText.style.zIndex = "45";
-  dialogueText.style.left = "19.5%";
+  dialogueText.style.left = "21.2%";
   dialogueText.style.top = "68.2%";
-  dialogueText.style.width = "53.5%";
+  dialogueText.style.width = "66.5%";
   dialogueText.style.height = "20.8%";
   dialogueText.style.padding = "1.3% 2.0%";
   dialogueText.style.fontSize = "clamp(16px, calc(1.28vw + 3px), 29px)";
