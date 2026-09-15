@@ -17,26 +17,14 @@
  */
 
 /* =========================================================
-   PRIMER DIÁLOGO: INSTRUCCIONES DE NAVEGACIÓN
+   INSTRUCCIONES DENTRO DEL PRIMER DIÁLOGO
    ========================================================= */
 
-const navigationHelpAlreadyAdded = scenes.some(scene => scene.navigationHelp === true);
+const firstDialogueScene = scenes.find((scene, index) => index > 0 && scene.type === "dialogue");
 
-if (!navigationHelpAlreadyAdded) {
-  // Al insertar una escena después de la portada cambian en +1 los índices
-  // de destino que ya existían en la introducción.
-  scenes.forEach(scene => {
-    if (Number.isInteger(scene.skipTo) && scene.skipTo >= 1) {
-      scene.skipTo += 1;
-    }
-  });
-
-  scenes.splice(1, 0, {
-    image: "IMG1.png",
-    type: "dialogue",
-    navigationHelp: true,
-    text: "Para avanzar, toca la pantalla. Para retroceder, toca dos veces."
-  });
+if (firstDialogueScene && !firstDialogueScene.navigationHelpAdded) {
+  firstDialogueScene.text = `${firstDialogueScene.text} Para avanzar, toca la pantalla. Para retroceder, toca dos veces.`;
+  firstDialogueScene.navigationHelpAdded = true;
 }
 
 let practicePhaseAnimating = false;
@@ -384,7 +372,7 @@ stage.addEventListener("touchend", event => {
   /*
    * La portada se inicia inmediatamente para que el navegador considere
    * el arranque de la música parte del gesto del usuario. Después aparece
-   * el nuevo diálogo que explica cómo navegar.
+   * el primer diálogo normal, que ya incluye las instrucciones de navegación.
    */
   if (scenes[sceneIndex]?.type === "start") {
     lastTapTime = 0;
