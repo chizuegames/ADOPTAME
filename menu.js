@@ -57,7 +57,7 @@ Object.assign(storyMenuPanel.style, {
   background: "#ffffff",
   border: "5px solid #252323",
   borderRadius: "26px",
-  padding: "3.2% 3.4% 3.6%",
+  padding: "3.2% 3.4% 3.0%",
   boxSizing: "border-box",
   boxShadow: "0 12px 28px rgba(0,0,0,.28)"
 });
@@ -81,6 +81,21 @@ Object.assign(storyMenuGrid.style, {
   gap: "12px"
 });
 storyMenuPanel.appendChild(storyMenuGrid);
+
+const storyMenuHint = document.createElement("div");
+storyMenuHint.textContent = "Para acceder al menú, mantén pulsada la pantalla.";
+Object.assign(storyMenuHint.style, {
+  marginTop: "2.8%",
+  paddingTop: "2.2%",
+  borderTop: "2px solid rgba(37,35,35,.18)",
+  color: "#252323",
+  fontFamily: "inherit",
+  fontSize: "clamp(13px, 1.55vw, 23px)",
+  fontWeight: "600",
+  lineHeight: "1.2",
+  textAlign: "center"
+});
+storyMenuPanel.appendChild(storyMenuHint);
 
 const storyMenuClose = document.createElement("button");
 storyMenuClose.type = "button";
@@ -189,6 +204,8 @@ function buildStoryMenu() {
 }
 
 function openStoryMenu() {
+  if (!storyMenuOverlay.hidden) return;
+
   buildStoryMenu();
   storyMenuOverlay.hidden = false;
   storyMenuOverlay.style.display = "flex";
@@ -215,6 +232,80 @@ storyMenuOverlay.addEventListener("click", event => {
   }, { passive: true });
 });
 
+/* =========================================================
+   ACCESO RÁPIDO AL MENÚ — PULSACIÓN PROLONGADA
+   ========================================================= */
+
+const STORY_MENU_LONG_PRESS_MS = 650;
+const STORY_MENU_LONG_PRESS_MOVE = 22;
+
+let storyMenuLongPressTimer = null;
+let storyMenuLongPressStartX = 0;
+let storyMenuLongPressStartY = 0;
+let storyMenuLongPressTriggered = false;
+
+function clearStoryMenuLongPress() {
+  if (storyMenuLongPressTimer) {
+    clearTimeout(storyMenuLongPressTimer);
+    storyMenuLongPressTimer = null;
+  }
+}
+
+stage.addEventListener("touchstart", event => {
+  if (!storyMenuOverlay.hidden) return;
+  if (event.touches.length !== 1) return;
+  if (event.target.closest("button")) return;
+
+  const touch = event.touches[0];
+  storyMenuLongPressStartX = touch.clientX;
+  storyMenuLongPressStartY = touch.clientY;
+  storyMenuLongPressTriggered = false;
+  clearStoryMenuLongPress();
+
+  storyMenuLongPressTimer = window.setTimeout(() => {
+    storyMenuLongPressTimer = null;
+    storyMenuLongPressTriggered = true;
+
+    if (typeof clearPendingSingleTap === "function") {
+      clearPendingSingleTap();
+    }
+
+    openStoryMenu();
+  }, STORY_MENU_LONG_PRESS_MS);
+}, { capture: true, passive: true });
+
+stage.addEventListener("touchmove", event => {
+  if (!storyMenuLongPressTimer || event.touches.length !== 1) return;
+
+  const touch = event.touches[0];
+  const dx = touch.clientX - storyMenuLongPressStartX;
+  const dy = touch.clientY - storyMenuLongPressStartY;
+
+  if (Math.hypot(dx, dy) > STORY_MENU_LONG_PRESS_MOVE) {
+    clearStoryMenuLongPress();
+  }
+}, { capture: true, passive: true });
+
+stage.addEventListener("touchend", event => {
+  clearStoryMenuLongPress();
+
+  if (!storyMenuLongPressTriggered) return;
+
+  storyMenuLongPressTriggered = false;
+
+  if (typeof clearPendingSingleTap === "function") {
+    clearPendingSingleTap();
+  }
+
+  event.preventDefault();
+  event.stopImmediatePropagation();
+}, { capture: true, passive: false });
+
+stage.addEventListener("touchcancel", () => {
+  clearStoryMenuLongPress();
+  storyMenuLongPressTriggered = false;
+}, { capture: true, passive: true });
+
 const firstStoryDialogueIndex = findSceneIndex(
   (scene, index) => index > 0 && scene.type === "dialogue"
 );
@@ -222,6 +313,9 @@ const firstStoryDialogueIndex = findSceneIndex(
 const baseRenderSceneForStoryMenu = renderScene;
 renderScene = function () {
   closeStoryMenu();
+  clearStoryMenuLongPress();
+  storyMenuLongPressTriggered = false;
+
   baseRenderSceneForStoryMenu();
 
   const scene = scenes[sceneIndex];
