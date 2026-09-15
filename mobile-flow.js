@@ -48,6 +48,11 @@ function renderStaticPracticeStep(scene) {
   if (typeof clearBoardPieces === "function") clearBoardPieces();
   if (typeof hidePracticeLayer === "function") hidePracticeLayer();
 
+  // Las capas anteriores pueden haber establecido un bloqueo al intentar
+  // iniciar una animación. Como aquí la cancelamos para mostrar primero el
+  // diálogo, también liberamos la interacción inmediatamente.
+  interactionLockedUntil = 0;
+
   boardPracticeLayer.style.display = "block";
 
   switch (scene.practiceStep) {
