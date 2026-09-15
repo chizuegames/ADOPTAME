@@ -1,13 +1,38 @@
 /* =========================================================
-   CONTINUACIÓN DE LA PRÁCTICA — YETTI
+   CONTINUACIÓN DE LA PRÁCTICA — YETTI Y REHABILITACIÓN DE RANGO
    ========================================================= */
 
 /*
  * Continúa desde el estado final de la primera resolución de amenaza.
  * El tablero se conserva visible mientras se consulta la carta grande de
- * Yetti. La carta grande intenta usar AN2.png y, mientras ese archivo no
- * esté disponible, cae automáticamente a AN2s.png como respaldo.
+ * Yetti y luego se desarrollan las dos acciones del siguiente turno.
  */
+
+/* =========================================================
+   OCHO FICHAS NEGRAS
+   Desde que comienza la práctica hay 6 disponibles en F y 2 agotadas en Q.
+   ========================================================= */
+
+const baseRenderReserveTokensWithInitialBlackQ = renderReserveTokens;
+renderReserveTokens = function (includeFn6 = true) {
+  baseRenderReserveTokensWithInitialBlackQ(includeFn6);
+
+  createImagePiece("initial-Qn1", practiceTokenAssets.neglect.small, "Qn1", {
+    width: "1.72%",
+    shadow: false,
+    zIndex: 18
+  });
+
+  createImagePiece("initial-Qn2", practiceTokenAssets.neglect.small, "Qn2", {
+    width: "1.72%",
+    shadow: false,
+    zIndex: 18
+  });
+};
+
+/* =========================================================
+   ESCENAS
+   ========================================================= */
 
 const afterRollSceneIndex = scenes.findIndex(
   scene => scene.type === "practice-board" && scene.practiceStep === "after-roll"
@@ -31,10 +56,56 @@ scenes.push({
   image: "IMGBE1.png",
   type: "practice-board",
   practiceStep: "yetti-placed",
+  text: "Listo, Yetti ya tiene dónde quedarse. Pero no nos olvidemos de Rango. Usaré mi primera acción para retirar su ficha de descuido antes de que se multiplique."
+});
+
+const neglectRemovedWaitSceneIndex = scenes.length;
+scenes.push({
+  image: "IMGBE1.png",
+  type: "practice-board",
+  practiceStep: "neglect-removed-wait",
   text: ""
 });
 
-["AN2.png", "AN2s.png", "AN11s.png"].forEach(src => {
+const stimulationDialogueSceneIndex = scenes.length;
+scenes.push({
+  image: "IMGBE1.png",
+  type: "practice-board",
+  practiceStep: "stimulation-dialogue",
+  text: "Veo que a Rango ya solo le falta cubrir una necesidad de estimulación para rehabilitarse, así que usaré mi segunda acción para hacerlo."
+});
+
+const stimulationDoneWaitSceneIndex = scenes.length;
+scenes.push({
+  image: "IMGBE1.png",
+  type: "practice-board",
+  practiceStep: "stimulation-done-wait",
+  text: ""
+});
+
+const rehabilitationDialogueSceneIndex = scenes.length;
+scenes.push({
+  image: "IMGBE1.png",
+  type: "practice-board",
+  practiceStep: "rehabilitation-dialogue",
+  text: "Ahora que hemos cubierto todas las necesidades de Rango, moveremos sus fichas al lado de la zona de receso y daremos vuelta a su carta."
+});
+
+const rangoRehabilitatedSceneIndex = scenes.length;
+scenes.push({
+  image: "IMGBE1.png",
+  type: "practice-board",
+  practiceStep: "rango-rehabilitated",
+  text: ""
+});
+
+[
+  "AN2.png",
+  "AN2s.png",
+  "AN11s.png",
+  "AN17s.png",
+  "AF17s.png"
+].forEach(src => {
   const img = new Image();
   img.src = src;
 });
@@ -91,21 +162,31 @@ yettiLargeCard.addEventListener("error", () => {
 
 stage.appendChild(yettiLargeCard);
 
-let yettiPlacementAnimating = false;
-let yettiPlacementTimer = null;
+let continuationAnimating = false;
+let continuationTimer = null;
 
-function clearYettiPlacementTimer() {
-  if (yettiPlacementTimer) {
-    clearTimeout(yettiPlacementTimer);
-    yettiPlacementTimer = null;
+function clearContinuationTimer() {
+  if (continuationTimer) {
+    clearTimeout(continuationTimer);
+    continuationTimer = null;
   }
 }
 
 function hideYettiExtraUI() {
   yettiCAHotspot.hidden = true;
   yettiLargeCard.hidden = true;
-  clearYettiPlacementTimer();
+  clearContinuationTimer();
 }
+
+function removeBoardPiece(id) {
+  const piece = boardPieces.get(id);
+  if (piece) piece.remove();
+  boardPieces.delete(id);
+}
+
+/* =========================================================
+   ESTADOS DEL TABLERO
+   ========================================================= */
 
 function renderResolvedBoard() {
   if (typeof clearBoardPieces === "function") clearBoardPieces();
@@ -113,20 +194,86 @@ function renderResolvedBoard() {
   renderCoreBoardState({ adopterMoved: true, showDie: true, neglectPlaced: true });
 }
 
-function renderYettiPlacedBoard() {
-  renderResolvedBoard();
+function putYettiInA3AndNextAnimalInCA() {
+  // Quita AN2 del mazo para que exista una sola copia visual de Yetti.
+  removeBoardPiece("AN2");
 
-  // AN11 queda visible en CA cuando Yetti abandona el mazo.
   createImagePiece("AN11", "AN11s.png", "CA", {
     zIndex: 14,
     alt: "Siguiente animal visible AN11"
   });
 
-  // La misma carta pequeña de Yetti queda en A3, la sala rosa de descanso.
   createImagePiece("AN2", "AN2s.png", "A3", {
     zIndex: 16,
     alt: "Yetti ubicado en A3"
   });
+}
+
+function renderYettiTurnBoard(options = {}) {
+  const neglectPlaced = options.neglectPlaced !== false;
+  const stimulationPlaced = Boolean(options.stimulationPlaced);
+  const exhausted = Boolean(options.exhausted);
+  const rangoFlipped = Boolean(options.rangoFlipped);
+
+  if (typeof clearBoardPieces === "function") clearBoardPieces();
+  boardPracticeLayer.style.display = "block";
+
+  renderCoreBoardState({
+    adopterMoved: true,
+    showDie: true,
+    neglectPlaced
+  });
+
+  putYettiInA3AndNextAnimalInCA();
+
+  if (stimulationPlaced || exhausted) {
+    // La quinta ficha azul deja la reserva F para cubrir a Rango.
+    removeBoardPiece("reserve-Fz5");
+  }
+
+  if (stimulationPlaced && !exhausted) {
+    createImagePiece("Rango-41", practiceTokenAssets.stimulation.small, "41", {
+      width: "1.78%",
+      zIndex: 22,
+      shadow: false
+    });
+  }
+
+  if (exhausted) {
+    // Las fichas usadas pasan a Q y dejan de mostrarse sobre la carta.
+    removeBoardPiece("Rango-42");
+    removeBoardPiece("Rango-43");
+    removeBoardPiece("Rango-44");
+
+    createImagePiece("used-Qz1", practiceTokenAssets.stimulation.small, "Qz1", {
+      width: "1.72%",
+      shadow: false,
+      zIndex: 19
+    });
+    createImagePiece("used-Qf1", practiceTokenAssets.affection.small, "Qf1", {
+      width: "1.72%",
+      shadow: false,
+      zIndex: 19
+    });
+    createImagePiece("used-Qv1", practiceTokenAssets.health.small, "Qv1", {
+      width: "1.72%",
+      shadow: false,
+      zIndex: 19
+    });
+    createImagePiece("used-Qv2", practiceTokenAssets.health.small, "Qv2", {
+      width: "1.72%",
+      shadow: false,
+      zIndex: 19
+    });
+  }
+
+  if (rangoFlipped) {
+    removeBoardPiece("AN17");
+    createImagePiece("AF17", "AF17s.png", "A4", {
+      zIndex: 16,
+      alt: "Rango rehabilitado"
+    });
+  }
 }
 
 function showContinuationDialogue(scene) {
@@ -145,17 +292,21 @@ function showContinuationDialogue(scene) {
   }
 }
 
+/* =========================================================
+   YETTI
+   ========================================================= */
+
 function openYettiDetail() {
-  if (yettiPlacementAnimating) return;
+  if (continuationAnimating) return;
   sceneIndex = yettiDetailSceneIndex;
   interactionLockedUntil = 0;
   renderScene();
 }
 
 function animateYettiToA3() {
-  if (yettiPlacementAnimating) return;
+  if (continuationAnimating) return;
 
-  yettiPlacementAnimating = true;
+  continuationAnimating = true;
   interactionLockedUntil = Date.now() + 1450;
 
   const beginAnimation = () => {
@@ -164,7 +315,7 @@ function animateYettiToA3() {
 
     renderResolvedBoard();
 
-    // Ponemos AN11 debajo de AN2 antes de moverla, así el mazo nunca queda vacío.
+    // AN11 aparece debajo antes de que Yetti salga del mazo.
     createImagePiece("AN11", "AN11s.png", "CA", {
       zIndex: 14,
       alt: "Siguiente animal visible AN11"
@@ -177,13 +328,155 @@ function animateYettiToA3() {
       movePiece("AN2", "A3", { duration: 1050 });
     }, 120);
 
-    yettiPlacementTimer = window.setTimeout(() => {
-      yettiPlacementTimer = null;
-      yettiPlacementAnimating = false;
+    continuationTimer = window.setTimeout(() => {
+      continuationTimer = null;
+      continuationAnimating = false;
       interactionLockedUntil = 0;
       sceneIndex = yettiPlacedSceneIndex;
       renderScene();
     }, 1320);
+  };
+
+  if (typeof hidePracticeDialogueBeforeAnimation === "function") {
+    hidePracticeDialogueBeforeAnimation(beginAnimation);
+  } else {
+    beginAnimation();
+  }
+}
+
+/* =========================================================
+   PRIMERA ACCIÓN: RETIRAR DESCUIDO
+   ========================================================= */
+
+function animateNeglectBackToFn5() {
+  if (continuationAnimating) return;
+
+  continuationAnimating = true;
+  interactionLockedUntil = Date.now() + 1500;
+
+  const beginAnimation = () => {
+    renderYettiTurnBoard({ neglectPlaced: true });
+
+    /*
+     * Fn1-Fn5 están ocupadas porque Fn6 fue la ficha que cayó sobre Rango.
+     * Para cumplir la nueva distribución, la ficha que ya estaba en Fn5 se
+     * corre a Fn6 y la ficha retirada de Rango regresa específicamente a Fn5.
+     */
+    const reserveFn5 = boardPieces.get("reserve-Fn5");
+    if (reserveFn5) reserveFn5.style.zIndex = "23";
+
+    movePiece("reserve-Fn5", "Fn6", { duration: 420 });
+
+    window.setTimeout(() => {
+      const neglect = boardPieces.get("Rango-46");
+      if (neglect) neglect.style.zIndex = "25";
+      movePiece("Rango-46", "Fn5", { duration: 900 });
+    }, 210);
+
+    continuationTimer = window.setTimeout(() => {
+      continuationTimer = null;
+      continuationAnimating = false;
+      interactionLockedUntil = 0;
+      sceneIndex = neglectRemovedWaitSceneIndex;
+      renderScene();
+    }, 1320);
+  };
+
+  if (typeof hidePracticeDialogueBeforeAnimation === "function") {
+    hidePracticeDialogueBeforeAnimation(beginAnimation);
+  } else {
+    beginAnimation();
+  }
+}
+
+/* =========================================================
+   SEGUNDA ACCIÓN: CUBRIR ESTIMULACIÓN
+   ========================================================= */
+
+function animateStimulationToRango() {
+  if (continuationAnimating) return;
+
+  continuationAnimating = true;
+  interactionLockedUntil = Date.now() + 1450;
+
+  const beginAnimation = () => {
+    renderYettiTurnBoard({ neglectPlaced: false });
+
+    const blue = boardPieces.get("reserve-Fz5");
+    if (blue) blue.style.zIndex = "25";
+
+    window.setTimeout(() => {
+      movePiece("reserve-Fz5", "41", {
+        duration: 950,
+        width: "1.78%"
+      });
+    }, 120);
+
+    continuationTimer = window.setTimeout(() => {
+      continuationTimer = null;
+      continuationAnimating = false;
+      interactionLockedUntil = 0;
+      sceneIndex = stimulationDoneWaitSceneIndex;
+      renderScene();
+    }, 1260);
+  };
+
+  if (typeof hidePracticeDialogueBeforeAnimation === "function") {
+    hidePracticeDialogueBeforeAnimation(beginAnimation);
+  } else {
+    beginAnimation();
+  }
+}
+
+/* =========================================================
+   REHABILITACIÓN: FICHAS A Q Y CARTA A SU LADO REHABILITADO
+   ========================================================= */
+
+function animateRangoRehabilitation() {
+  if (continuationAnimating) return;
+
+  continuationAnimating = true;
+  interactionLockedUntil = Date.now() + 2300;
+
+  const beginAnimation = () => {
+    renderYettiTurnBoard({ neglectPlaced: false, stimulationPlaced: true });
+
+    ["Rango-41", "Rango-42", "Rango-43", "Rango-44"].forEach(id => {
+      const piece = boardPieces.get(id);
+      if (piece) piece.style.zIndex = "27";
+    });
+
+    // Cada color va a su primera posición disponible de la zona Q.
+    window.setTimeout(() => movePiece("Rango-41", "Qz1", { duration: 900, width: "1.72%" }), 100);
+    window.setTimeout(() => movePiece("Rango-42", "Qf1", { duration: 900, width: "1.72%" }), 180);
+    window.setTimeout(() => movePiece("Rango-43", "Qv1", { duration: 900, width: "1.72%" }), 260);
+    window.setTimeout(() => movePiece("Rango-44", "Qv2", { duration: 900, width: "1.72%" }), 340);
+
+    // Después de guardar las fichas, la carta gira y revela AF17s.
+    window.setTimeout(() => {
+      const rango = boardPieces.get("AN17");
+      if (!rango) return;
+
+      rango.style.transition = "transform 260ms ease-in, opacity 260ms ease-in";
+      rango.style.transform = "perspective(700px) rotateY(90deg)";
+      rango.style.opacity = "0.45";
+
+      window.setTimeout(() => {
+        rango.src = "AF17s.png";
+        rango.alt = "Rango rehabilitado";
+        rango.style.transition = "transform 300ms ease-out, opacity 300ms ease-out";
+        rango.style.transform = "perspective(700px) rotateY(0deg)";
+        rango.style.opacity = "1";
+      }, 270);
+    }, 1320);
+
+    continuationTimer = window.setTimeout(() => {
+      continuationTimer = null;
+      continuationAnimating = false;
+      interactionLockedUntil = 0;
+      sceneIndex = rangoRehabilitatedSceneIndex;
+      renderScene();
+    }, 2010);
   };
 
   if (typeof hidePracticeDialogueBeforeAnimation === "function") {
@@ -206,7 +499,7 @@ yettiCAHotspot.addEventListener("click", event => {
 const baseRenderSceneForYettiContinuation = renderScene;
 renderScene = function () {
   hideYettiExtraUI();
-  yettiPlacementAnimating = false;
+  continuationAnimating = false;
 
   baseRenderSceneForYettiContinuation();
 
@@ -214,8 +507,7 @@ renderScene = function () {
   if (!scene) return;
 
   if (scene.practiceStep === "after-roll") {
-    // El flujo anterior ocultaba este diálogo porque antes era un estado final.
-    // Ahora pasa a ser el comienzo del siguiente turno.
+    // Este diálogo inicia el turno siguiente; para avanzar hay que tocar CA.
     renderResolvedBoard();
     yettiCAHotspot.hidden = false;
     showContinuationDialogue(scene);
@@ -238,12 +530,65 @@ renderScene = function () {
   }
 
   if (scene.practiceStep === "yetti-placed") {
-    renderYettiPlacedBoard();
-    dialogueText.hidden = true;
-    if (typeof hidePracticeSpeakerBox === "function") hidePracticeSpeakerBox(true);
+    renderYettiTurnBoard({ neglectPlaced: true });
+    showContinuationDialogue(scene);
     stage.setAttribute(
       "aria-label",
-      "Yetti está ubicado en A3 y AN11 queda visible en CA como siguiente carta de animal."
+      "Yetti está en A3. Toca para retirar la ficha negra de descuido de Rango y devolverla a Fn5."
+    );
+    return;
+  }
+
+  if (scene.practiceStep === "neglect-removed-wait") {
+    renderYettiTurnBoard({ neglectPlaced: false });
+    showContinuationDialogue(scene);
+    stage.setAttribute(
+      "aria-label",
+      "La ficha de descuido fue retirada. Toca para conocer la segunda acción del turno."
+    );
+    return;
+  }
+
+  if (scene.practiceStep === "stimulation-dialogue") {
+    renderYettiTurnBoard({ neglectPlaced: false });
+    showContinuationDialogue(scene);
+    stage.setAttribute(
+      "aria-label",
+      "A Rango solo le falta estimulación. Toca para mover una ficha azul desde F hasta la posición 41."
+    );
+    return;
+  }
+
+  if (scene.practiceStep === "stimulation-done-wait") {
+    renderYettiTurnBoard({ neglectPlaced: false, stimulationPlaced: true });
+    showContinuationDialogue(scene);
+    stage.setAttribute(
+      "aria-label",
+      "Rango ya tiene cubiertas todas sus necesidades. Toca para continuar."
+    );
+    return;
+  }
+
+  if (scene.practiceStep === "rehabilitation-dialogue") {
+    renderYettiTurnBoard({ neglectPlaced: false, stimulationPlaced: true });
+    showContinuationDialogue(scene);
+    stage.setAttribute(
+      "aria-label",
+      "Toca para mover las fichas de Rango a la zona Q y dar vuelta su carta."
+    );
+    return;
+  }
+
+  if (scene.practiceStep === "rango-rehabilitated") {
+    renderYettiTurnBoard({
+      neglectPlaced: false,
+      exhausted: true,
+      rangoFlipped: true
+    });
+    showContinuationDialogue(scene);
+    stage.setAttribute(
+      "aria-label",
+      "Rango está rehabilitado. Su carta ahora muestra AF17 y sus fichas usadas están agotadas en la zona Q."
     );
   }
 };
@@ -256,12 +601,46 @@ const baseAdvanceSceneForYettiContinuation = advanceScene;
 advanceScene = function () {
   const scene = scenes[sceneIndex];
 
-  // En este punto no basta tocar cualquier parte: hay que seleccionar CA.
+  if (continuationAnimating) return;
+
+  // Aquí no basta tocar cualquier parte: hay que seleccionar la carta en CA.
   if (scene?.practiceStep === "after-roll") return;
 
-  // Un toque sobre la carta grande cierra la consulta y anima Yetti a A3.
+  // Cierra la consulta grande y mueve Yetti hasta A3.
   if (scene?.practiceStep === "yetti-detail") {
     animateYettiToA3();
+    return;
+  }
+
+  // Primera acción: retirar la ficha negra de Rango.
+  if (scene?.practiceStep === "yetti-placed") {
+    animateNeglectBackToFn5();
+    return;
+  }
+
+  // Después de la animación, el siguiente toque muestra el segundo diálogo.
+  if (scene?.practiceStep === "neglect-removed-wait") {
+    sceneIndex = stimulationDialogueSceneIndex;
+    renderScene();
+    return;
+  }
+
+  // Segunda acción: una ficha azul baja desde F hasta 41.
+  if (scene?.practiceStep === "stimulation-dialogue") {
+    animateStimulationToRango();
+    return;
+  }
+
+  // Después de la animación, el siguiente toque explica la rehabilitación.
+  if (scene?.practiceStep === "stimulation-done-wait") {
+    sceneIndex = rehabilitationDialogueSceneIndex;
+    renderScene();
+    return;
+  }
+
+  // Las cuatro fichas se agotan en Q y la carta cambia de AN17s a AF17s.
+  if (scene?.practiceStep === "rehabilitation-dialogue") {
+    animateRangoRehabilitation();
     return;
   }
 
