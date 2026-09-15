@@ -1,5 +1,5 @@
 /* =========================================================
-   FLUJO MÓVIL — DIÁLOGO ANTES DE ANIMAR + DOBLE TOQUE
+   FLUJO MÓVIL — DIÁLOGO ANTES DE ANIMAR + TOQUES
    ========================================================= */
 
 /*
@@ -8,12 +8,36 @@
  * Al terminar, se pasa automáticamente al siguiente diálogo/estado.
  *
  * Navegación táctil:
- * - Doble toque: avanzar.
- * - Mantener pulsado ~700 ms: regresar.
+ * - Toque sencillo: avanzar.
+ * - Doble toque: regresar.
  *
- * Se abandona el gesto de arrastre porque la app suele estar incrustada
- * en otra página y el navegador interpreta el arrastre como desplazamiento.
+ * El toque sencillo se confirma después de una espera muy corta para poder
+ * distinguirlo de un doble toque. Los botones interactivos conservan su
+ * comportamiento normal.
  */
+
+/* =========================================================
+   PRIMER DIÁLOGO: INSTRUCCIONES DE NAVEGACIÓN
+   ========================================================= */
+
+const navigationHelpAlreadyAdded = scenes.some(scene => scene.navigationHelp === true);
+
+if (!navigationHelpAlreadyAdded) {
+  // Al insertar una escena después de la portada cambian en +1 los índices
+  // de destino que ya existían en la introducción.
+  scenes.forEach(scene => {
+    if (Number.isInteger(scene.skipTo) && scene.skipTo >= 1) {
+      scene.skipTo += 1;
+    }
+  });
+
+  scenes.splice(1, 0, {
+    image: "IMG1.png",
+    type: "dialogue",
+    navigationHelp: true,
+    text: "Para avanzar, toca la pantalla. Para retroceder, toca dos veces."
+  });
+}
 
 let practicePhaseAnimating = false;
 let practiceAutoAdvanceTimer = null;
@@ -132,11 +156,9 @@ function runPracticeStepAnimation(step) {
 
   hidePracticeDialogueBeforeAnimation(() => {
     /*
-     * IMPORTANTE:
      * La escena estática mostraba las piezas mientras se leía el diálogo.
      * Antes de reconstruir el estado animado hay que borrarlas. De lo
-     * contrario quedaba una copia estática de AD16/Lorena en CD y otra
-     * copia era la que se desplazaba hacia D1.
+     * contrario podría quedar una copia estática debajo de la que se mueve.
      */
     if (typeof clearBoardPieces === "function") clearBoardPieces();
     boardPracticeLayer.style.display = "block";
@@ -177,8 +199,8 @@ renderScene = function () {
 
   const scene = scenes[sceneIndex];
 
-  // Ya no necesitamos el botón flotante de volver: en táctil se usa
-  // pulsación prolongada y en escritorio siguen disponibles las teclas.
+  // La navegación general se hace con toques; el botón flotante de volver
+  // deja de ser necesario.
   previousButton.hidden = true;
 
   if (!scene || scene.type !== "practice-board") return;
@@ -219,38 +241,35 @@ previousScene = function () {
 
 /* =========================================================
    NAVEGACIÓN TÁCTIL
-   Doble toque = avanzar
-   Pulsación prolongada = regresar
+   Toque sencillo = avanzar
+   Doble toque = regresar
    ========================================================= */
 
-const DOUBLE_TAP_MAX_DELAY = 360;
-const DOUBLE_TAP_MAX_DISTANCE = 56;
-const TAP_MAX_MOVEMENT = 18;
-const LONG_PRESS_DELAY = 700;
+const DOUBLE_TAP_MAX_DELAY = 330;
+const DOUBLE_TAP_MAX_DISTANCE = 58;
+const TAP_MAX_MOVEMENT = 20;
 
+let pendingSingleTapTimer = null;
 let lastTapTime = 0;
 let lastTapX = 0;
 let lastTapY = 0;
-
 let touchStartX = 0;
 let touchStartY = 0;
 let touchStartTime = 0;
 let touchMoved = false;
-let longPressTimer = null;
-let longPressTriggered = false;
 let suppressTouchClickUntil = 0;
 
-// "manipulation" permite el desplazamiento normal de la página anfitriona
-// y evita que el doble toque se convierta en zoom del navegador.
+// No usamos arrastre para navegar. El iframe/página anfitriona puede seguir
+// gestionando su desplazamiento normal.
 stage.style.touchAction = "manipulation";
 stage.style.userSelect = "none";
 stage.style.webkitUserSelect = "none";
 stage.style.webkitTouchCallout = "none";
 
-function clearLongPressTimer() {
-  if (longPressTimer) {
-    clearTimeout(longPressTimer);
-    longPressTimer = null;
+function clearPendingSingleTap() {
+  if (pendingSingleTapTimer) {
+    clearTimeout(pendingSingleTapTimer);
+    pendingSingleTapTimer = null;
   }
 }
 
@@ -258,7 +277,7 @@ function canNavigateNow() {
   return !practicePhaseAnimating && Date.now() >= interactionLockedUntil;
 }
 
-function advanceWithDoubleTap() {
+function advanceWithSingleTap() {
   if (!canNavigateNow()) return;
 
   if (openRoomKey) {
@@ -269,15 +288,14 @@ function advanceWithDoubleTap() {
   const scene = scenes[sceneIndex];
   if (!scene) return;
 
-  // En el mapa de salas el doble toque permite continuar sin depender
-  // obligatoriamente de la flecha incorporada en la ilustración.
+  // En el mapa, tocar una zona vacía permite continuar; las salas siguen
+  // funcionando como botones y no pasan por esta lógica.
   if (scene.type === "room-map" && Number.isInteger(scene.skipTo)) {
     skipCurrentPart();
     return;
   }
 
-  // Las amenazas siguen siendo táctiles en A1-A9, pero un doble toque
-  // fuera de esos botones permite pasar al siguiente ejemplo.
+  // En tarjetas de amenaza, un toque fuera de A1-A9 continúa la historia.
   if (scene.type === "threat-card") {
     if (sceneIndex < scenes.length - 1) {
       sceneIndex += 1;
@@ -289,7 +307,7 @@ function advanceWithDoubleTap() {
   advanceScene();
 }
 
-function backWithLongPress() {
+function backWithDoubleTap() {
   if (!canNavigateNow()) return;
 
   if (openRoomKey) {
@@ -302,43 +320,26 @@ function backWithLongPress() {
 
 stage.addEventListener("touchstart", event => {
   if (event.touches.length !== 1) {
-    clearLongPressTimer();
+    touchMoved = true;
     return;
   }
 
-  // Los botones interactivos conservan su comportamiento normal.
+  // Botones de salas, zonas de amenaza y controles conservan su click.
   if (event.target.closest("button")) {
-    clearLongPressTimer();
+    touchMoved = true;
     return;
   }
-
-  const scene = scenes[sceneIndex];
 
   const touch = event.touches[0];
   touchStartX = touch.clientX;
   touchStartY = touch.clientY;
   touchStartTime = Date.now();
   touchMoved = false;
-  longPressTriggered = false;
-
-  // En la portada conservamos "Toca para iniciar" con un solo toque.
-  if (scene?.type === "start") return;
-
-  clearLongPressTimer();
-  longPressTimer = window.setTimeout(() => {
-    if (touchMoved || !canNavigateNow()) return;
-
-    longPressTriggered = true;
-    suppressTouchClickUntil = Date.now() + 700;
-    lastTapTime = 0;
-    backWithLongPress();
-  }, LONG_PRESS_DELAY);
 }, { passive: true });
 
 stage.addEventListener("touchmove", event => {
   if (event.touches.length !== 1) {
     touchMoved = true;
-    clearLongPressTimer();
     return;
   }
 
@@ -348,33 +349,24 @@ stage.addEventListener("touchmove", event => {
 
   if (Math.hypot(dx, dy) > TAP_MAX_MOVEMENT) {
     touchMoved = true;
-    clearLongPressTimer();
   }
 }, { passive: true });
 
 stage.addEventListener("touchend", event => {
-  clearLongPressTimer();
-
-  const scene = scenes[sceneIndex];
-
-  // La portada mantiene el toque simple original.
-  if (scene?.type === "start") {
-    lastTapTime = 0;
-    return;
-  }
-
-  // Los botones (salas, zonas A1-A9, flechas incorporadas, etc.)
-  // conservan su click habitual.
+  // Los botones interactivos no usan el sistema toque/doble toque.
   if (event.target.closest("button")) {
     lastTapTime = 0;
+    clearPendingSingleTap();
     return;
   }
 
-  suppressTouchClickUntil = Date.now() + 600;
+  // Bloquea el click sintético que genera el navegador tras touchend.
+  suppressTouchClickUntil = Date.now() + 700;
 
-  if (longPressTriggered || touchMoved) {
-    longPressTriggered = false;
+  if (touchMoved) {
+    touchMoved = false;
     lastTapTime = 0;
+    clearPendingSingleTap();
     return;
   }
 
@@ -383,8 +375,21 @@ stage.addEventListener("touchend", event => {
 
   const now = Date.now();
   const duration = now - touchStartTime;
-  if (duration > 420) {
+  if (duration > 450) {
     lastTapTime = 0;
+    clearPendingSingleTap();
+    return;
+  }
+
+  /*
+   * La portada se inicia inmediatamente para que el navegador considere
+   * el arranque de la música parte del gesto del usuario. Después aparece
+   * el nuevo diálogo que explica cómo navegar.
+   */
+  if (scenes[sceneIndex]?.type === "start") {
+    lastTapTime = 0;
+    clearPendingSingleTap();
+    advanceScene();
     return;
   }
 
@@ -393,33 +398,41 @@ stage.addEventListener("touchend", event => {
   const sinceLastTap = now - lastTapTime;
   const distanceFromLastTap = Math.hypot(x - lastTapX, y - lastTapY);
 
+  // Segundo toque: cancela el avance pendiente y regresa una escena.
   if (
     lastTapTime > 0 &&
     sinceLastTap <= DOUBLE_TAP_MAX_DELAY &&
     distanceFromLastTap <= DOUBLE_TAP_MAX_DISTANCE
   ) {
+    clearPendingSingleTap();
     lastTapTime = 0;
-    advanceWithDoubleTap();
+    backWithDoubleTap();
     return;
   }
 
+  // Primer toque: esperamos apenas lo necesario para saber si habrá un
+  // segundo. Si no llega, se confirma como avance.
   lastTapTime = now;
   lastTapX = x;
   lastTapY = y;
+  clearPendingSingleTap();
+  pendingSingleTapTimer = window.setTimeout(() => {
+    pendingSingleTapTimer = null;
+    lastTapTime = 0;
+    advanceWithSingleTap();
+  }, DOUBLE_TAP_MAX_DELAY + 20);
 }, { passive: true });
 
 stage.addEventListener("touchcancel", () => {
-  clearLongPressTimer();
   touchMoved = false;
-  longPressTriggered = false;
   lastTapTime = 0;
+  clearPendingSingleTap();
 }, { passive: true });
 
 /*
  * El código original avanza con un click simple sobre el stage. En móvil,
- * los navegadores generan un click sintético después del touchend. Lo
- * bloqueamos únicamente durante unos milisegundos después de un toque;
- * así el mouse en escritorio continúa funcionando normalmente.
+ * el navegador genera un click sintético después de touchend. Lo bloqueamos
+ * para que no se produzca un segundo avance accidental.
  */
 stage.addEventListener("click", event => {
   if (Date.now() >= suppressTouchClickUntil) return;
@@ -429,7 +442,7 @@ stage.addEventListener("click", event => {
   event.stopImmediatePropagation();
 }, true);
 
-// Evita el menú contextual del navegador durante la pulsación prolongada.
+// Evita zoom/acciones secundarias del navegador por doble toque prolongado.
 stage.addEventListener("contextmenu", event => {
   if (event.target.closest("button")) return;
   event.preventDefault();
