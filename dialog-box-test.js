@@ -64,20 +64,20 @@ function hidePracticeSpeakerBox(immediate = false) {
 }
 
 /*
- * El texto es una capa independiente colocada sobre la zona blanca marcada
- * en la referencia. Así podemos aprovechar casi todo el espacio útil sin
- * deformar la ilustración del cuadro de diálogo.
+ * El texto es una capa independiente colocada sobre la zona blanca.
+ * Aprovechamos casi todo el ancho útil del cuadro, reduciendo al mínimo
+ * los márgenes laterales, pero sin invadir el retrato ni deformar RE.png.
  */
 applyMobilePracticeDialogueLayout = function () {
   dialogueText.style.zIndex = "45";
-  dialogueText.style.left = "19.6%";
+  dialogueText.style.left = "18.4%";
   dialogueText.style.top = "69.1%";
-  dialogueText.style.width = "55.0%";
+  dialogueText.style.width = "58.0%";
   dialogueText.style.height = "23.8%";
-  dialogueText.style.padding = "1.1% 1.6%";
+  dialogueText.style.padding = "0.9% 0.4%";
   dialogueText.style.boxSizing = "border-box";
   dialogueText.style.fontSize = "clamp(15px, calc(1.18vw + 3px), 27px)";
-  dialogueText.style.lineHeight = "1.15";
+  dialogueText.style.lineHeight = "1.12";
   dialogueText.style.alignItems = "center";
   dialogueText.style.justifyContent = "center";
   dialogueText.style.background = "transparent";
