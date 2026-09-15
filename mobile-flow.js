@@ -1,12 +1,18 @@
 /* =========================================================
-   FLUJO MÓVIL — DIÁLOGO ANTES DE ANIMAR + GESTOS
+   FLUJO MÓVIL — DIÁLOGO ANTES DE ANIMAR + DOBLE TOQUE
    ========================================================= */
 
 /*
  * En la práctica, primero se muestra el diálogo con calma.
- * Cuando el usuario avanza, el cuadro se retira y SOLO entonces
- * comienza la animación. Al terminar, se pasa automáticamente al
- * siguiente diálogo/estado.
+ * Al avanzar, el cuadro se retira y SOLO después comienza la animación.
+ * Al terminar, se pasa automáticamente al siguiente diálogo/estado.
+ *
+ * Navegación táctil:
+ * - Doble toque: avanzar.
+ * - Mantener pulsado ~700 ms: regresar.
+ *
+ * Se abandona el gesto de arrastre porque la app suele estar incrustada
+ * en otra página y el navegador interpreta el arrastre como desplazamiento.
  */
 
 let practicePhaseAnimating = false;
@@ -19,24 +25,40 @@ function clearPracticeAutoAdvance() {
   }
 }
 
+/*
+ * Protección adicional: nunca debe haber dos elementos visuales con el
+ * mismo id de pieza. Esto evita, por ejemplo, que quede una Lorena quieta
+ * en CD mientras otra copia se mueve hacia D1.
+ */
+const baseCreateImagePieceForMobileFlow = createImagePiece;
+createImagePiece = function (id, src, zoneName, options = {}) {
+  const previousPiece = boardPieces.get(id);
+  if (previousPiece) {
+    previousPiece.remove();
+    boardPieces.delete(id);
+  }
+
+  return baseCreateImagePieceForMobileFlow(id, src, zoneName, options);
+};
+
 function applyMobilePracticeDialogueLayout() {
-  // Burbuja mucho más amplia para celular. Puede cubrir el tablero:
-  // durante la animación se retira por completo.
+  // En celular priorizamos lectura. La burbuja puede cubrir el tablero,
+  // porque desaparece antes de iniciar cualquier animación.
   dialogueText.style.zIndex = "45";
-  dialogueText.style.left = "12.0%";
-  dialogueText.style.top = "65.5%";
-  dialogueText.style.width = "76.0%";
-  dialogueText.style.height = "26.0%";
-  dialogueText.style.padding = "2.2% 3.0%";
-  dialogueText.style.fontSize = "clamp(15px, calc(1.35vw + 4px), 30px)";
-  dialogueText.style.lineHeight = "1.16";
+  dialogueText.style.left = "8.0%";
+  dialogueText.style.top = "60.0%";
+  dialogueText.style.width = "84.0%";
+  dialogueText.style.height = "31.0%";
+  dialogueText.style.padding = "2.6% 3.4%";
+  dialogueText.style.fontSize = "clamp(16px, calc(1.45vw + 4px), 32px)";
+  dialogueText.style.lineHeight = "1.17";
   dialogueText.style.alignItems = "center";
   dialogueText.style.justifyContent = "center";
   dialogueText.style.background = "#ffffff";
   dialogueText.style.border = "5px solid #111111";
-  dialogueText.style.borderRadius = "22px";
+  dialogueText.style.borderRadius = "24px";
   dialogueText.style.color = "#111111";
-  dialogueText.style.boxShadow = "0 5px 16px rgba(0,0,0,.18)";
+  dialogueText.style.boxShadow = "0 6px 18px rgba(0,0,0,.20)";
   dialogueText.style.textAlign = "center";
   dialogueText.style.overflow = "hidden";
   dialogueText.style.opacity = "1";
@@ -49,8 +71,8 @@ function renderStaticPracticeStep(scene) {
   if (typeof hidePracticeLayer === "function") hidePracticeLayer();
 
   // Las capas anteriores pueden haber establecido un bloqueo al intentar
-  // iniciar una animación. Como aquí la cancelamos para mostrar primero el
-  // diálogo, también liberamos la interacción inmediatamente.
+  // iniciar una animación. Aquí mostramos primero el diálogo, así que la
+  // interacción debe quedar disponible inmediatamente.
   interactionLockedUntil = 0;
 
   boardPracticeLayer.style.display = "block";
@@ -107,7 +129,18 @@ function runPracticeStepAnimation(step) {
   if (practicePhaseAnimating) return;
 
   practicePhaseAnimating = true;
+
   hidePracticeDialogueBeforeAnimation(() => {
+    /*
+     * IMPORTANTE:
+     * La escena estática mostraba las piezas mientras se leía el diálogo.
+     * Antes de reconstruir el estado animado hay que borrarlas. De lo
+     * contrario quedaba una copia estática de AD16/Lorena en CD y otra
+     * copia era la que se desplazaba hacia D1.
+     */
+    if (typeof clearBoardPieces === "function") clearBoardPieces();
+    boardPracticeLayer.style.display = "block";
+
     if (step === "adopter") {
       animateLorenaFromCDToD1();
       finishPracticeAnimationAfter(1650);
@@ -144,7 +177,8 @@ renderScene = function () {
 
   const scene = scenes[sceneIndex];
 
-  // El gesto sustituye la necesidad del botón flotante de volver.
+  // Ya no necesitamos el botón flotante de volver: en táctil se usa
+  // pulsación prolongada y en escritorio siguen disponibles las teclas.
   previousButton.hidden = true;
 
   if (!scene || scene.type !== "practice-board") return;
@@ -184,29 +218,47 @@ previousScene = function () {
 };
 
 /* =========================================================
-   DESLIZAMIENTO HORIZONTAL
-   Izquierda = avanzar | Derecha = regresar
+   NAVEGACIÓN TÁCTIL
+   Doble toque = avanzar
+   Pulsación prolongada = regresar
    ========================================================= */
 
-let swipeStartX = 0;
-let swipeStartY = 0;
-let swipeCurrentX = 0;
-let swipeCurrentY = 0;
-let swipeTracking = false;
-let suppressStageClickUntil = 0;
+const DOUBLE_TAP_MAX_DELAY = 360;
+const DOUBLE_TAP_MAX_DISTANCE = 56;
+const TAP_MAX_MOVEMENT = 18;
+const LONG_PRESS_DELAY = 700;
 
-const SWIPE_MIN_DISTANCE = 48;
-const SWIPE_AXIS_RATIO = 1.15;
+let lastTapTime = 0;
+let lastTapX = 0;
+let lastTapY = 0;
 
-// Permite desplazamiento vertical de la página anfitriona, pero reserva
-// el gesto horizontal para la historia.
-stage.style.touchAction = "pan-y pinch-zoom";
+let touchStartX = 0;
+let touchStartY = 0;
+let touchStartTime = 0;
+let touchMoved = false;
+let longPressTimer = null;
+let longPressTriggered = false;
+let suppressTouchClickUntil = 0;
+
+// "manipulation" permite el desplazamiento normal de la página anfitriona
+// y evita que el doble toque se convierta en zoom del navegador.
+stage.style.touchAction = "manipulation";
+stage.style.userSelect = "none";
+stage.style.webkitUserSelect = "none";
+stage.style.webkitTouchCallout = "none";
+
+function clearLongPressTimer() {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  }
+}
 
 function canNavigateNow() {
   return !practicePhaseAnimating && Date.now() >= interactionLockedUntil;
 }
 
-function advanceWithSwipe() {
+function advanceWithDoubleTap() {
   if (!canNavigateNow()) return;
 
   if (openRoomKey) {
@@ -217,14 +269,15 @@ function advanceWithSwipe() {
   const scene = scenes[sceneIndex];
   if (!scene) return;
 
-  // En el mapa de salas, deslizar permite seguir sin depender de la flecha.
+  // En el mapa de salas el doble toque permite continuar sin depender
+  // obligatoriamente de la flecha incorporada en la ilustración.
   if (scene.type === "room-map" && Number.isInteger(scene.skipTo)) {
     skipCurrentPart();
     return;
   }
 
-  // Las tarjetas de amenaza conservan sus zonas táctiles, pero también
-  // pueden abandonarse con un deslizamiento hacia la izquierda.
+  // Las amenazas siguen siendo táctiles en A1-A9, pero un doble toque
+  // fuera de esos botones permite pasar al siguiente ejemplo.
   if (scene.type === "threat-card") {
     if (sceneIndex < scenes.length - 1) {
       sceneIndex += 1;
@@ -236,7 +289,7 @@ function advanceWithSwipe() {
   advanceScene();
 }
 
-function backWithSwipe() {
+function backWithLongPress() {
   if (!canNavigateNow()) return;
 
   if (openRoomKey) {
@@ -249,63 +302,135 @@ function backWithSwipe() {
 
 stage.addEventListener("touchstart", event => {
   if (event.touches.length !== 1) {
-    swipeTracking = false;
+    clearLongPressTimer();
+    return;
+  }
+
+  // Los botones interactivos conservan su comportamiento normal.
+  if (event.target.closest("button")) {
+    clearLongPressTimer();
+    return;
+  }
+
+  const scene = scenes[sceneIndex];
+
+  const touch = event.touches[0];
+  touchStartX = touch.clientX;
+  touchStartY = touch.clientY;
+  touchStartTime = Date.now();
+  touchMoved = false;
+  longPressTriggered = false;
+
+  // En la portada conservamos "Toca para iniciar" con un solo toque.
+  if (scene?.type === "start") return;
+
+  clearLongPressTimer();
+  longPressTimer = window.setTimeout(() => {
+    if (touchMoved || !canNavigateNow()) return;
+
+    longPressTriggered = true;
+    suppressTouchClickUntil = Date.now() + 700;
+    lastTapTime = 0;
+    backWithLongPress();
+  }, LONG_PRESS_DELAY);
+}, { passive: true });
+
+stage.addEventListener("touchmove", event => {
+  if (event.touches.length !== 1) {
+    touchMoved = true;
+    clearLongPressTimer();
     return;
   }
 
   const touch = event.touches[0];
-  swipeStartX = touch.clientX;
-  swipeStartY = touch.clientY;
-  swipeCurrentX = swipeStartX;
-  swipeCurrentY = swipeStartY;
-  swipeTracking = true;
+  const dx = touch.clientX - touchStartX;
+  const dy = touch.clientY - touchStartY;
+
+  if (Math.hypot(dx, dy) > TAP_MAX_MOVEMENT) {
+    touchMoved = true;
+    clearLongPressTimer();
+  }
 }, { passive: true });
 
-stage.addEventListener("touchmove", event => {
-  if (!swipeTracking || event.touches.length !== 1) return;
-
-  const touch = event.touches[0];
-  swipeCurrentX = touch.clientX;
-  swipeCurrentY = touch.clientY;
-
-  const dx = swipeCurrentX - swipeStartX;
-  const dy = swipeCurrentY - swipeStartY;
-
-  if (Math.abs(dx) > 16 && Math.abs(dx) > Math.abs(dy) * SWIPE_AXIS_RATIO) {
-    event.preventDefault();
-  }
-}, { passive: false });
-
 stage.addEventListener("touchend", event => {
-  if (!swipeTracking) return;
-  swipeTracking = false;
+  clearLongPressTimer();
+
+  const scene = scenes[sceneIndex];
+
+  // La portada mantiene el toque simple original.
+  if (scene?.type === "start") {
+    lastTapTime = 0;
+    return;
+  }
+
+  // Los botones (salas, zonas A1-A9, flechas incorporadas, etc.)
+  // conservan su click habitual.
+  if (event.target.closest("button")) {
+    lastTapTime = 0;
+    return;
+  }
+
+  suppressTouchClickUntil = Date.now() + 600;
+
+  if (longPressTriggered || touchMoved) {
+    longPressTriggered = false;
+    lastTapTime = 0;
+    return;
+  }
 
   const touch = event.changedTouches[0];
-  if (touch) {
-    swipeCurrentX = touch.clientX;
-    swipeCurrentY = touch.clientY;
+  if (!touch) return;
+
+  const now = Date.now();
+  const duration = now - touchStartTime;
+  if (duration > 420) {
+    lastTapTime = 0;
+    return;
   }
 
-  const dx = swipeCurrentX - swipeStartX;
-  const dy = swipeCurrentY - swipeStartY;
-  const horizontal = Math.abs(dx) >= SWIPE_MIN_DISTANCE && Math.abs(dx) > Math.abs(dy) * SWIPE_AXIS_RATIO;
+  const x = touch.clientX;
+  const y = touch.clientY;
+  const sinceLastTap = now - lastTapTime;
+  const distanceFromLastTap = Math.hypot(x - lastTapX, y - lastTapY);
 
-  if (!horizontal) return;
+  if (
+    lastTapTime > 0 &&
+    sinceLastTap <= DOUBLE_TAP_MAX_DELAY &&
+    distanceFromLastTap <= DOUBLE_TAP_MAX_DISTANCE
+  ) {
+    lastTapTime = 0;
+    advanceWithDoubleTap();
+    return;
+  }
 
-  suppressStageClickUntil = Date.now() + 550;
-
-  if (dx < 0) advanceWithSwipe();
-  else backWithSwipe();
+  lastTapTime = now;
+  lastTapX = x;
+  lastTapY = y;
 }, { passive: true });
 
 stage.addEventListener("touchcancel", () => {
-  swipeTracking = false;
+  clearLongPressTimer();
+  touchMoved = false;
+  longPressTriggered = false;
+  lastTapTime = 0;
 }, { passive: true });
 
-// Evita que el navegador convierta el final del swipe en un toque adicional.
+/*
+ * El código original avanza con un click simple sobre el stage. En móvil,
+ * los navegadores generan un click sintético después del touchend. Lo
+ * bloqueamos únicamente durante unos milisegundos después de un toque;
+ * así el mouse en escritorio continúa funcionando normalmente.
+ */
 stage.addEventListener("click", event => {
-  if (Date.now() < suppressStageClickUntil) {
-    event.preventDefault();
-    event.stopImmediatePropagation();
-  }
+  if (Date.now() >= suppressTouchClickUntil) return;
+  if (event.target.closest("button")) return;
+
+  event.preventDefault();
+  event.stopImmediatePropagation();
 }, true);
+
+// Evita el menú contextual del navegador durante la pulsación prolongada.
+stage.addEventListener("contextmenu", event => {
+  if (event.target.closest("button")) return;
+  event.preventDefault();
+});
