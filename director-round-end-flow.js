@@ -12,12 +12,15 @@
  *      AD1:  CD -> D1
  *      AD7 queda visible en CD.
  * 4) Al terminar la fila, el dado se lanza automáticamente y cae en 2.
+ * 5) El resultado 2 hace que Spirit pierda su ficha azul de 24, que pasa
+ *    a Qz3. Después AS8 pasa de CE a CO y AS9 queda activa en CE.
  */
 
 [
   "AD1s.png",
   "AD7s.png",
-  "DD2.png"
+  "DD2.png",
+  "AS9s.png"
 ].forEach(src => {
   const img = new Image();
   img.src = src;
@@ -45,10 +48,18 @@ scenes.push({
   image: "IMGBE3.png",
   type: "practice-board",
   practiceStep: "director-round-die-two",
+  text: "Mmm... salió un 2, así que Spirit perderá una ficha de estimulación. Por suerte, no es nada que no podamos manejar."
+});
+
+const directorRoundResolvedSceneIndex = scenes.length;
+scenes.push({
+  image: "IMGBE3.png",
+  type: "practice-board",
+  practiceStep: "director-round-resolved",
   text: ""
 });
 
-/* Estos pasos siguen mostrando AS8 activa y AS7 en CO. */
+/* Mientras se explica el resultado del dado, AS8 sigue activa y AS7 en CO. */
 if (typeof DIRECTOR_STEPS_WITH_AS8 !== "undefined") {
   DIRECTOR_STEPS_WITH_AS8.add("director-round-threat");
   DIRECTOR_STEPS_WITH_AS8.add("director-round-die-two");
@@ -61,6 +72,7 @@ if (typeof DIRECTOR_STEPS_WITH_AS8 !== "undefined") {
 function renderDirectorRoundEndBoard(options = {}) {
   const adoptersAdvanced = Boolean(options.adoptersAdvanced);
   const diceFace = options.diceFace == null ? 1 : Number(options.diceFace);
+  const roundResolved = Boolean(options.roundResolved);
 
   renderDirectorLateBoard({
     spiritMoved: true,
@@ -69,7 +81,7 @@ function renderDirectorRoundEndBoard(options = {}) {
     yettiCleared: true
   });
 
-  if (adoptersAdvanced) {
+  if (adoptersAdvanced || roundResolved) {
     removeBoardPiece("AD12");
     removeBoardPiece("AD2");
     removeBoardPiece("AD1");
@@ -103,6 +115,33 @@ function renderDirectorRoundEndBoard(options = {}) {
       zIndex: 22,
       shadow: false,
       alt: `Dado mostrando ${diceFace}`
+    });
+  }
+
+  if (roundResolved) {
+    /* Spirit pierde la ficha azul de 24 y esta pasa a la primera Q azul libre. */
+    removeBoardPiece("Spirit-blue-24");
+    removeBoardPiece("Spirit-blue-Qz3");
+    createImagePiece("Spirit-blue-Qz3", practiceTokenAssets.stimulation.small, "Qz3", {
+      width: "1.72%",
+      zIndex: 20,
+      shadow: false,
+      alt: "Ficha azul de Spirit agotada en Qz3"
+    });
+
+    /* AS8 queda descartada y AS9 pasa a ser la amenaza activa. */
+    removeBoardPiece("AS7");
+    removeBoardPiece("AS8");
+    removeBoardPiece("AS9");
+
+    createImagePiece("AS9", "AS9s.png", "CE", {
+      zIndex: 15,
+      alt: "Amenaza AS9 activa"
+    });
+
+    createImagePiece("AS8", "AS8s.png", "CO", {
+      zIndex: 14,
+      alt: "Amenaza AS8 descartada"
     });
   }
 }
@@ -237,6 +276,56 @@ function animateDirectorDiceToTwo() {
 }
 
 /* =========================================================
+   RESULTADO 2
+   SPIRIT: 24 -> Qz3 / AS8: CE -> CO / AS9 QUEDA ACTIVA
+   ========================================================= */
+
+function animateDirectorRoundResultTwo() {
+  if (directorRoundEndAnimationRunning || directorLateAnimationRunning) return;
+
+  directorRoundEndAnimationRunning = true;
+  interactionLockedUntil = Date.now() + 1900;
+
+  const beginAnimation = () => {
+    renderDirectorRoundEndBoard({ adoptersAdvanced: true, diceFace: 2 });
+
+    /* AS9 queda debajo de AS8 y se revela cuando la amenaza avanza. */
+    createImagePiece("AS9", "AS9s.png", "CE", {
+      zIndex: 13,
+      alt: "Nueva amenaza AS9"
+    });
+
+    const spiritBlue = boardPieces.get("Spirit-blue-24");
+    const as8 = boardPieces.get("AS8");
+
+    if (spiritBlue) spiritBlue.style.zIndex = "32";
+    if (as8) as8.style.zIndex = "31";
+
+    window.setTimeout(() => {
+      movePiece("Spirit-blue-24", "Qz3", {
+        duration: 1000,
+        width: "1.72%"
+      });
+
+      movePiece("AS8", "CO", {
+        duration: 1050
+      });
+    }, 120);
+
+    /* AS7 queda cubierta por AS8 en el descarte y deja de verse. */
+    window.setTimeout(() => {
+      removeBoardPiece("AS7");
+    }, 1080);
+
+    directorRoundEndTimer = window.setTimeout(() => {
+      finishDirectorRoundEndAnimation(directorRoundResolvedSceneIndex);
+    }, 1380);
+  };
+
+  hidePracticeDialogueBeforeAnimation(beginAnimation);
+}
+
+/* =========================================================
    RENDER
    ========================================================= */
 
@@ -272,11 +361,26 @@ renderScene = function () {
   if (scene.practiceStep === "director-round-die-two") {
     renderDirectorRoundEndBoard({ adoptersAdvanced: true, diceFace: 2 });
     setSceneImage("IMGBE3.png", "Tablero al final de la primera ronda");
+    showSpeakerDialogue("RD.png", scene);
+    stage.setAttribute(
+      "aria-label",
+      "El dado cayó en 2. Spirit perderá su ficha azul de estimulación. Toca para enviarla a Q y avanzar la amenaza de AS8 a AS9."
+    );
+    return;
+  }
+
+  if (scene.practiceStep === "director-round-resolved") {
+    renderDirectorRoundEndBoard({
+      adoptersAdvanced: true,
+      diceFace: 2,
+      roundResolved: true
+    });
+    setSceneImage("IMGBE3.png", "Tablero al final de la primera ronda");
     dialogueText.hidden = true;
     hidePracticeSpeakerBox(true);
     stage.setAttribute(
       "aria-label",
-      "La fila de adoptantes avanzó: AD12 está en D3, AD2 en D2, AD1 en D1 y AD7 visible en CD. El dado cayó en 2."
+      "Spirit perdió su ficha azul, que quedó agotada en Qz3. AS8 pasó al descarte y AS9 quedó activa en CE."
     );
   }
 };
@@ -303,7 +407,12 @@ advanceScene = function () {
     return;
   }
 
-  if (scene?.practiceStep === "director-round-die-two") return;
+  if (scene?.practiceStep === "director-round-die-two") {
+    animateDirectorRoundResultTwo();
+    return;
+  }
+
+  if (scene?.practiceStep === "director-round-resolved") return;
 
   baseAdvanceSceneForDirectorRoundEnd();
 };
@@ -326,6 +435,12 @@ previousScene = function () {
 
   if (scene?.practiceStep === "director-round-die-two") {
     sceneIndex = directorRoundThreatSceneIndex;
+    renderScene();
+    return;
+  }
+
+  if (scene?.practiceStep === "director-round-resolved") {
+    sceneIndex = directorRoundDieTwoSceneIndex;
     renderScene();
     return;
   }
