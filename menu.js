@@ -152,6 +152,14 @@ function getStoryMenuSections() {
     {
       label: "Práctica",
       index: findSceneIndex(scene => scene.type === "practice-board" && scene.practiceStep === "intro")
+    },
+    {
+      label: "Turno de Tatiana",
+      index: findSceneIndex(scene => scene.type === "practice-board" && scene.practiceStep === "tatiana-intro")
+    },
+    {
+      label: "Turno de la directora",
+      index: findSceneIndex(scene => scene.type === "practice-board" && scene.practiceStep === "director-return")
     }
   ];
 }
