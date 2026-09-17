@@ -135,19 +135,63 @@ motionOccupiedZones = function (prefix, rowKey, count) {
    FONDO CORRECTO DURANTE TODA LA ANIMACIÓN DE TRUCOS
    ========================================================= */
 
-const baseRenderExtraTricksBoardForBackgroundConsistency = renderExtraTricksBoard;
-renderExtraTricksBoard = function (phase) {
-  baseRenderExtraTricksBoardForBackgroundConsistency(phase);
-
+function tricksBackgroundForPhase(phase) {
   if (phase <= 2) {
-    setSceneImage("IMGBE1.png", "Tablero durante la demostración de Giovanni");
-    return;
+    return {
+      src: "IMGBE1.png",
+      alt: "Tablero durante la demostración de Giovanni"
+    };
   }
 
   if (phase <= 5) {
-    setSceneImage("IMGBE2.png", "Tablero durante la demostración de Tatiana");
+    return {
+      src: "IMGBE2.png",
+      alt: "Tablero durante la demostración de Tatiana"
+    };
+  }
+
+  return {
+    src: "IMGBE3.png",
+    alt: "Tablero durante los trucos de la directora"
+  };
+}
+
+/*
+ * renderExtraTricksBoard reconstruye el tablero usando internamente
+ * renderThirdValentinaBoard(). Esa función llama setSceneImage("IMGBE4.png")
+ * antes de que el flujo de Trucos vuelva a colocar su propio fondo. Aunque el
+ * cambio dura apenas un instante, el navegador alcanza a pintarlo y produce
+ * el destello verde observado entre el texto y la animación.
+ *
+ * Mientras se reconstruye cualquier fase de Trucos bloqueamos ese cambio
+ * intermedio: cualquier intento de usar IMGBE4 se redirige directamente al
+ * fondo correspondiente a la fase actual. Así IMGBE4 nunca llega al DOM.
+ */
+let tricksBackgroundLock = null;
+const baseSetSceneImageForTricksBackground = setSceneImage;
+
+setSceneImage = function (src, alt) {
+  if (tricksBackgroundLock && src === "IMGBE4.png") {
+    baseSetSceneImageForTricksBackground(
+      tricksBackgroundLock.src,
+      tricksBackgroundLock.alt
+    );
     return;
   }
 
-  setSceneImage("IMGBE3.png", "Tablero durante los trucos de la directora");
+  baseSetSceneImageForTricksBackground(src, alt);
+};
+
+const baseRenderExtraTricksBoardForBackgroundConsistency = renderExtraTricksBoard;
+renderExtraTricksBoard = function (phase) {
+  const background = tricksBackgroundForPhase(phase);
+  const previousLock = tricksBackgroundLock;
+  tricksBackgroundLock = background;
+
+  try {
+    baseRenderExtraTricksBoardForBackgroundConsistency(phase);
+    baseSetSceneImageForTricksBackground(background.src, background.alt);
+  } finally {
+    tricksBackgroundLock = previousLock;
+  }
 };
